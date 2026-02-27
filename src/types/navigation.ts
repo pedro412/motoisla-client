@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 
-export type AdminModule = "dashboard" | "productos" | "ventas";
+import type { Role } from "@/lib/types/auth";
+
+export type PrivateModule = "pos" | "reports";
 
 export interface AppNavItem {
   key: string;
   label: string;
   href: string;
   icon: ReactNode;
-  module: AdminModule;
-  requiredPermissions?: string[];
+  module: PrivateModule;
+  requiredRoles?: Role[];
 }

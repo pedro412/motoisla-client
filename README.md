@@ -1,46 +1,52 @@
 # MotoIsla Client
 
-Base inicial del dashboard administrativo en Next.js para consumir un backend existente.
+Frontend Next.js para operar MotoIsla contra el backend local `motoisla-server`.
 
 ## Stack
 
-- Next.js (App Router) + TypeScript
-- Material UI (tema oscuro por defecto)
+- Next.js App Router + TypeScript
+- Material UI (dark por defecto)
 - TanStack Query
+- Zustand (sesión)
 - Vitest + Testing Library
-- Playwright (smoke e2e)
-- ESLint + Prettier
+- Playwright
+
+## Variables de entorno
+
+Crear `.env.local`:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+```
 
 ## Scripts
 
-- `pnpm dev`: servidor local
-- `pnpm build`: build de producción
-- `pnpm start`: servidor de producción
-- `pnpm lint`: lint
-- `pnpm typecheck`: chequeo de tipos
-- `pnpm test`: tests unit/integration
-- `pnpm test:e2e`: tests e2e smoke
+- `pnpm dev`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:e2e`
 
-## Estructura
+## Rutas principales
 
-- `src/app/(auth)`: rutas públicas de autenticación (`/login`, `/recuperar-cuenta`)
-- `src/app/(admin)`: rutas internas del dashboard (`/dashboard`, `/productos`, `/ventas`)
-- `src/components/layout`: shell principal (sidebar, topbar, app shell)
-- `src/lib/api`: `http-client`, errores y query client
-- `src/lib/auth`: contratos de autorización para futura implementación
-- `src/modules`: servicios y lógica por módulo
-- `src/theme`: configuración del tema MUI
+- `/catalog` catálogo público
+- `/catalog/[sku]` detalle público
+- `/login` autenticación
+- `/pos` POS privado
+- `/admin/reports` reportes admin
 
-## Permisos (preparado para backend)
+## Arquitectura de integración
 
-La lógica de permisos no está activa todavía, pero ya se dejaron:
+- BFF en Next (`/api/auth/*`, `/api/proxy/*`)
+- Cookies httpOnly para `access/refresh`
+- Refresh automático al recibir `401` en proxy
+- Manejo uniforme de errores backend: `code/detail/fields`
 
-- `requiredPermissions` en items de menú
-- `AuthSession` placeholder
-- `PermissionEvaluator` como punto único para inyectar reglas de acceso
+## Estado
 
-## Próximos pasos
+Implementado en este sprint:
 
-1. Integrar autenticación real con backend
-2. Activar filtros de menú/rutas por permisos
-3. Añadir toggle dark/light persistido
+- Auth login/logout/session con cookies httpOnly
+- Catálogo público con búsqueda y paginación
+- POS create/confirm/void
+- Reportes admin (`/metrics`, `/reports/sales`)

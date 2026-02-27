@@ -1,16 +1,15 @@
 "use client";
 
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import {
-  AppBar,
-  Box,
-  Button,
-  IconButton,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { AppBar, Box, Button, IconButton, Toolbar, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { authService } from "@/modules/auth/services/auth.service";
+import { useSessionStore } from "@/store/session-store";
 
 interface AppTopbarProps {
   title: string;
@@ -18,6 +17,24 @@ interface AppTopbarProps {
 }
 
 export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { session, clearSession } = useSessionStore();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+    } finally {
+      clearSession();
+      queryClient.clear();
+      router.push("/login");
+      router.refresh();
+      setIsLoggingOut(false);
+    }
+  }
+
   return (
     <AppBar
       position="fixed"
@@ -47,9 +64,15 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Button startIcon={<PersonRoundedIcon />} variant="text" color="inherit">
-            Perfil
+            {session.username ?? "Usuario"}
           </Button>
-          <Button startIcon={<LogoutRoundedIcon />} variant="outlined" color="inherit">
+          <Button
+            startIcon={<LogoutRoundedIcon />}
+            variant="outlined"
+            color="inherit"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
             Logout
           </Button>
         </Box>

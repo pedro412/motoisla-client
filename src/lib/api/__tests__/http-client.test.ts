@@ -18,7 +18,7 @@ describe("httpClient", () => {
       }),
     );
 
-    const result = await httpClient.get<{ ok: boolean }>("/health");
+    const result = await httpClient.get<{ ok: boolean }>("/health/");
 
     expect(result).toEqual({ ok: true });
   });
@@ -29,7 +29,7 @@ describe("httpClient", () => {
       vi.fn().mockResolvedValue({
         ok: false,
         status: 401,
-        json: async () => ({ message: "Unauthorized", code: "AUTH_401" }),
+        json: async () => ({ detail: "Unauthorized", code: "not_authenticated", fields: {} }),
       }),
     );
 
@@ -40,8 +40,8 @@ describe("httpClient", () => {
     } catch (error) {
       const apiError = error as ApiError;
       expect(apiError.status).toBe(401);
-      expect(apiError.code).toBe("AUTH_401");
-      expect(apiError.message).toBe("Unauthorized");
+      expect(apiError.code).toBe("not_authenticated");
+      expect(apiError.detail).toBe("Unauthorized");
     }
   });
 });

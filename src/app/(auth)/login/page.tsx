@@ -1,25 +1,67 @@
 "use client";
 
-import { Button, Paper, Stack, TextField, Typography } from "@mui/material";
-import Link from "next/link";
+import { Alert, Button, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+
+import { ApiError } from "@/lib/api/errors";
+import { authService } from "@/modules/auth/services/auth.service";
+import { useSessionStore } from "@/store/session-store";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { setSession, setHydrated } = useSessionStore();
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin123");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage(null);
+    setSubmitting(true);
+
+    try {
+      const session = await authService.login({ username, password });
+      setSession(session);
+      setHydrated(true);
+      if (session.role === "ADMIN") {
+        router.push("/admin/reports");
+      } else {
+        router.push("/pos");
+      }
+      router.refresh();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.detail);
+      } else {
+        setErrorMessage("No fue posible iniciar sesión.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <Paper elevation={3} sx={{ p: 4, width: "100%" }}>
-      <Stack spacing={2.5}>
+      <Stack spacing={2.5} component="form" onSubmit={onSubmit}>
         <Typography variant="h5" component="h2" fontWeight={600}>
           Iniciar sesión
         </Typography>
 
-        <TextField label="Correo electrónico" type="email" fullWidth />
-        <TextField label="Contraseña" type="password" fullWidth />
+        <TextField label="Username" value={username} onChange={(event) => setUsername(event.target.value)} fullWidth />
+        <TextField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          fullWidth
+        />
 
-        <Button variant="contained" size="large">
-          Entrar
-        </Button>
+        {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-        <Button component={Link} href="/recuperar-cuenta" variant="text">
-          ¿Olvidaste tu contraseña?
+        <Button type="submit" variant="contained" size="large" disabled={submitting}>
+          {submitting ? <CircularProgress size={22} color="inherit" /> : "Entrar"}
         </Button>
       </Stack>
     </Paper>

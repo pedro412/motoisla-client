@@ -7,13 +7,13 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <Container maxWidth="sm" sx={{ minHeight: "100dvh", py: 6, display: "flex", flexDirection: "column" }}>
+    <Container maxWidth="sm" sx={{ minHeight: "100dvh", py: 8, display: "flex", flexDirection: "column" }}>
       <Box sx={{ mb: 4 }}>
         <Typography component="h1" variant="h4" fontWeight={700}>
-          MotoIsla Admin
+          MotoIsla Client
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Accede al panel de administración.
+          Inicia sesión para continuar en el panel interno.
         </Typography>
       </Box>
 
@@ -21,7 +21,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
       <Box component="footer" sx={{ mt: 6 }}>
         <Typography variant="caption" color="text.secondary">
-          © {new Date().getFullYear()} MotoIsla. Todos los derechos reservados.
+          © {new Date().getFullYear()} MotoIsla.
         </Typography>
       </Box>
     </Container>

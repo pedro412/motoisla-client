@@ -1,17 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-test("auth layout has no admin shell", async ({ page }) => {
+test("login page renders auth layout", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(page.getByRole("heading", { name: "MotoIsla Admin" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "MotoIsla Client" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Entrar" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Perfil" })).toHaveCount(0);
 });
 
-test("admin route shows sidebar and topbar actions", async ({ page }) => {
-  await page.goto("/dashboard");
+test("public catalog is reachable without auth", async ({ page }) => {
+  await page.goto("/catalog");
 
-  await expect(page.getByText("Dashboard").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Perfil" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Catálogo Público" })).toBeVisible();
+});
+
+test("private route redirects to login when unauthenticated", async ({ page }) => {
+  await page.goto("/pos");
+
+  await expect(page).toHaveURL(/\/login$/);
 });

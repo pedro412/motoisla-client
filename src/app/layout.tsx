@@ -5,8 +5,8 @@ import { AppProviders } from "@/providers/app-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MotoIsla Admin",
-  description: "Dashboard administrativo para MotoIsla",
+  title: "MotoIsla Client",
+  description: "Frontend operativo para MotoIsla",
 };
 
 interface RootLayoutProps {

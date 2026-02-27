@@ -1,7 +1,4 @@
-"use client";
-
-import { Button, Paper, Stack, TextField, Typography } from "@mui/material";
-import Link from "next/link";
+import { Alert, Paper, Stack, Typography } from "@mui/material";
 
 export default function RecoverAccountPage() {
   return (
@@ -10,19 +7,7 @@ export default function RecoverAccountPage() {
         <Typography variant="h5" component="h2" fontWeight={600}>
           Recuperar cuenta
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Ingresa tu correo y te enviaremos instrucciones para recuperar el acceso.
-        </Typography>
-
-        <TextField label="Correo electrónico" type="email" fullWidth />
-
-        <Button variant="contained" size="large">
-          Enviar enlace
-        </Button>
-
-        <Button component={Link} href="/login" variant="text">
-          Volver al login
-        </Button>
+        <Alert severity="info">Este flujo queda en backlog hasta definir recuperación en backend.</Alert>
       </Stack>
     </Paper>
   );

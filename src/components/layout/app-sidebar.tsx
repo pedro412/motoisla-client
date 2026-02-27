@@ -37,7 +37,7 @@ export function AppSidebar({ navItems, mobileOpen, onMobileClose }: AppSidebarPr
       <Divider />
       <List sx={{ p: 1 }}>
         {navItems.map((item) => {
-          const isSelected = pathname.startsWith(item.href);
+          const isSelected = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <ListItemButton
