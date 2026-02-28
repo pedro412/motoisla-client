@@ -1,7 +1,7 @@
 # Project Status - MotoIsla Client
 
 ## Resumen ejecutivo
-- Estado general: **MVP integrado operativo en local**.
+- Estado general: **MVP integrado operativo en local** con checkout POS renovado.
 - Backend target: `motoisla-server` (`/api/v1`) con BFF en Next.
 - Rama activa: `codex/scaffold-admin-dashboard-pr`.
 
@@ -10,7 +10,11 @@
 - Proxy autenticado con refresh automático en `401`.
 - Guards de rutas privadas por sesión y rol.
 - Catálogo público (`/catalog`, `/catalog/[sku]`) con búsqueda y paginación.
-- POS (`/pos`) con create/confirm/void.
+- POS renovado:
+  - `/pos` como `Nueva Venta` con buscador tipo dropdown, carrito compacto y checkout en modal.
+  - creación + confirmación en un solo flujo de cobro.
+  - soporte de comisión de tarjeta configurable y MSI desde backend.
+- Historial de ventas en `/ventas` con tabla paginada y cancelación por reglas backend.
 - Reportes admin (`/admin/reports`) con `/metrics` y `/reports/sales`.
 - Compras (`/purchases/imports`) con flujo parse local MYESA + preview editable + `preview-confirm` backend.
 - Cálculo de precio público con margen en tiempo real.
@@ -21,7 +25,7 @@
   - smoke e2e (Playwright)
 
 ## Pendiente prioritario
-- Fortalecer validaciones POS por campo (`fields`) y UX de errores.
+- Fortalecer validaciones POS por campo (`fields`) y UX de errores finos en modal de cobro.
 - Completar e2e de negocio (POS + compras con assertions de inventario).
 - Definir/ajustar moneda y formatos finales de operación.
 - Endurecer observabilidad frontend (logging estructurado y captura de errores).

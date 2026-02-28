@@ -31,7 +31,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/pos", request.url));
   }
 
-  if (pathname.startsWith("/pos") && hasAccess && role === "INVESTOR") {
+  if ((pathname.startsWith("/pos") || pathname.startsWith("/ventas")) && hasAccess && role === "INVESTOR") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

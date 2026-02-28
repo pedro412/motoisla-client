@@ -12,7 +12,8 @@ describe("AppSidebar", () => {
   it("renders configured private navigation items", () => {
     render(<AppSidebar navItems={privateNavItems} mobileOpen={false} onMobileClose={vi.fn()} />);
 
-    expect(screen.getAllByText("POS").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Nueva Venta").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ventas").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Compras").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Productos").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Admin Reports").length).toBeGreaterThan(0);

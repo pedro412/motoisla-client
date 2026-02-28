@@ -34,3 +34,11 @@
 - Vista editable con cambio de precios, marca, categoría, stock auditado con razón y borrado con confirmación.
 - Nuevo `MoneyInput` reutilizable con máscara para importes.
 - Ajustes en compras para reconciliar productos existentes por SKU durante parse local y actualizar precios al reimportar.
+
+## 2026-02-28 (Nueva Venta + Ventas)
+- `POS` renombrado visualmente a `Nueva Venta`.
+- Nuevo flujo de checkout: buscador tipo dropdown, carrito compacto, resumen sticky y botón principal `Cobrar`.
+- Cobro en modal con efectivo/tarjeta, sugerencias de efectivo y cálculo de cambio.
+- La venta se crea y confirma en un solo paso desde el modal de cobro; el resultado se muestra en modal success.
+- Nueva pantalla `/ventas` con tabla paginada para historial y cancelación desde UI.
+- Integración frontend con planes de comisión de tarjeta configurables desde backend.

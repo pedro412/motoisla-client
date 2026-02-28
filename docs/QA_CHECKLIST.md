@@ -11,10 +11,16 @@
 - [ ] `/catalog/{sku}` muestra detalle.
 
 ## POS
-- [ ] create sale genera `DRAFT`.
-- [ ] confirm cambia a `CONFIRMED`.
-- [ ] void cambia a `VOID` según permisos/ventana.
+- [ ] `/pos` muestra buscador dropdown y se cierra al perder foco.
+- [ ] `Cobrar` abre modal de checkout con efectivo/tarjeta.
+- [ ] efectivo sugiere montos rápidos y calcula cambio correcto.
+- [ ] cobro exitoso crea + confirma la venta y muestra modal success.
 - [ ] errores backend (`code/detail/fields`) se muestran correctamente.
+
+## Ventas
+- [ ] `/ventas` carga tabla paginada.
+- [ ] cancelación desde tabla respeta permisos y ventana.
+- [ ] motivo de cancelación se muestra cuando la venta está en `VOID`.
 
 ## Reports
 - [ ] `/admin/reports` responde con filtros de rango.

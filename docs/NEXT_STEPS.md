@@ -1,18 +1,15 @@
 # Next Steps (Prioritized)
 
 ## P1 - Operación crítica
-1. Extender POS con manejo detallado de `fields` por error backend.
-2. Agregar validaciones cliente para reducir roundtrips fallidos:
-- `payments sum == total`
-- reglas `CARD`/`card_type`
-- restricciones de descuento para cashier.
-3. Agregar feedback post-confirm (estado final + limpieza de carrito).
+1. Agregar navegación por teclado al buscador de `Nueva Venta` (`ArrowDown`, `Enter`, `Esc`).
+2. Mostrar errores de create vs confirm de venta con resolución más guiada cuando una venta queda en `DRAFT`.
+3. Agregar filtros en `/ventas` (estatus, cajero, fecha e ID).
 4. Ajustar UX de compras para edición masiva de líneas y guardado por lote.
 5. Extender parser cliente a proveedores adicionales además de MYESA.
 
 ## P2 - QA funcional
 1. E2E completo de:
-- login -> create sale -> confirm -> void
+- login -> buscar producto -> cobrar venta -> validar cambio -> cancelación desde `/ventas`
 - reporte por rango con datos esperados
 - compras -> parse factura MYESA -> editar -> confirmar.
 2. Verificación cruzada con `motoisla-server/docs/API_QA_COLLECTION.http`.

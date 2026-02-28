@@ -1,10 +1,37 @@
 "use client";
 
-import { Alert, Box, Button, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
-import { useState } from "react";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
+import {
+  Alert,
+  Box,
+  Button,
+  ButtonBase,
+  Checkbox,
+  Chip,
+  ClickAwayListener,
+  Collapse,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  MenuItem,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
-import type { CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
+import type { CardCommissionPlan, CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
 import { salesService } from "@/modules/sales/services/sales.service";
 
 interface CartLine {
@@ -19,39 +46,201 @@ function currency(value: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
 }
 
+function toMoneyInput(value: string) {
+  return value.replace(/[^0-9.]/g, "");
+}
+
+function roundUpToStep(value: number, step: number) {
+  return Math.ceil(value / step) * step;
+}
+
+function buildCashSuggestions(total: number) {
+  const exact = Number(total.toFixed(2));
+  const next500 = roundUpToStep(exact, 500);
+  const next200 = roundUpToStep(exact, 200);
+
+  return [exact, next500, next200].filter((amount, index, all) => all.indexOf(amount) === index);
+}
+
+function legacyCardTypeForPlan(plan: CardCommissionPlan | null): CardType | undefined {
+  if (!plan) {
+    return undefined;
+  }
+  if (plan.installments_months === 0) {
+    return "NORMAL";
+  }
+  if (plan.installments_months === 3) {
+    return "MSI_3";
+  }
+  return undefined;
+}
+
+function stockChip(stock: number) {
+  return (
+    <Chip
+      size="small"
+      label={`${stock} en stock`}
+      color="success"
+      sx={{
+        fontWeight: 700,
+        "& .MuiChip-label": { px: 1.25 },
+      }}
+    />
+  );
+}
+
 export default function PosPage() {
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<ProductSearchItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [lines, setLines] = useState<CartLine[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
-  const [cardType, setCardType] = useState<CardType>("NORMAL");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [overrideUser, setOverrideUser] = useState("");
   const [overridePass, setOverridePass] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [useInstallments, setUseInstallments] = useState(false);
+  const [selectedInstallmentPlanId, setSelectedInstallmentPlanId] = useState("");
+  const [cashReceived, setCashReceived] = useState("");
+  const [completedSale, setCompletedSale] = useState<SaleResponse | null>(null);
+  const [changeDue, setChangeDue] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sale, setSale] = useState<SaleResponse | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  const cardPlansQuery = useQuery({
+    queryKey: ["card-commission-plans"],
+    queryFn: () => salesService.listCardCommissionPlans(),
+    staleTime: 60_000,
+  });
+
+  const cardPlans = cardPlansQuery.data?.results;
+  const normalCardPlan = useMemo(
+    () => cardPlans?.find((plan) => plan.installments_months === 0) ?? null,
+    [cardPlans],
+  );
+  const installmentPlans = useMemo(
+    () => cardPlans?.filter((plan) => plan.installments_months > 0) ?? [],
+    [cardPlans],
+  );
+
+  useEffect(() => {
+    if (paymentMethod !== "CARD") {
+      setUseInstallments(false);
+      setSelectedInstallmentPlanId("");
+      return;
+    }
+
+    if (!useInstallments) {
+      return;
+    }
+
+    if (installmentPlans.length === 0) {
+      setSelectedInstallmentPlanId("");
+      return;
+    }
+
+    const hasSelected = installmentPlans.some((plan) => plan.id === selectedInstallmentPlanId);
+    if (!hasSelected) {
+      setSelectedInstallmentPlanId(installmentPlans[0].id);
+    }
+  }, [installmentPlans, paymentMethod, selectedInstallmentPlanId, useInstallments]);
+
+  useEffect(() => {
+    const query = search.trim();
+
+    if (!query || query.length < 2) {
+      setProducts([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    let active = true;
+    const timeoutId = window.setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const response = await salesService.searchProducts({ q: query });
+        if (!active) {
+          return;
+        }
+        setProducts(response.results);
+        setSearchOpen(true);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        setErrorMessage(error instanceof Error ? error.message : "Error al buscar productos");
+      } finally {
+        if (active) {
+          setSearchLoading(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [search]);
 
   const subtotal = lines.reduce((acc, line) => acc + line.qty * line.unitPrice, 0);
   const discount = lines.reduce((acc, line) => acc + line.qty * line.unitPrice * (line.discountPct / 100), 0);
   const total = subtotal - discount;
-
-  async function handleSearch() {
-    setErrorMessage(null);
-    try {
-      const response = await salesService.searchProducts({ q: search });
-      setProducts(response.results);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Error al buscar productos");
+  const itemCount = lines.reduce((acc, line) => acc + line.qty, 0);
+  const searchHasQuery = search.trim().length >= 2;
+  const showSearchMenu = searchOpen && searchHasQuery && (searchLoading || products.length > 0);
+  const selectedCardPlan = useMemo(() => {
+    if (paymentMethod !== "CARD") {
+      return null;
     }
+    if (!useInstallments) {
+      return normalCardPlan;
+    }
+    return installmentPlans.find((plan) => plan.id === selectedInstallmentPlanId) ?? installmentPlans[0] ?? null;
+  }, [installmentPlans, normalCardPlan, paymentMethod, selectedInstallmentPlanId, useInstallments]);
+  const estimatedCommission = selectedCardPlan ? total * Number(selectedCardPlan.commission_rate) : 0;
+  const cashSuggestions = useMemo(() => buildCashSuggestions(total), [total]);
+  const completedItemCount = useMemo(
+    () =>
+      completedSale?.lines.reduce((acc, line) => acc + Number(line.qty), 0) ?? 0,
+    [completedSale],
+  );
+  const receivedAmount = Number(cashReceived || 0);
+  const previewChange = paymentMethod === "CASH" && Number.isFinite(receivedAmount) ? Math.max(receivedAmount - total, 0) : 0;
+
+  function resetCheckoutState() {
+    setCheckoutOpen(false);
+    setPaymentMethod("CASH");
+    setUseInstallments(false);
+    setSelectedInstallmentPlanId("");
+    setCashReceived("");
   }
 
-  function addLine(product: ProductSearchItem) {
-    setLines((prev) => {
-      if (prev.some((line) => line.product.id === product.id)) {
-        return prev;
-      }
-      return [
-        ...prev,
+  function resetSaleBuilder() {
+    setLines([]);
+    setSearch("");
+    setProducts([]);
+    setSearchOpen(false);
+    setOverrideUser("");
+    setOverridePass("");
+    setOverrideReason("");
+    setShowAdvanced(false);
+  }
+
+  function addOrIncrementLine(product: ProductSearchItem) {
+    const productStock = Number(product.stock);
+    if (productStock <= 0) {
+      setInfoMessage(`No hay stock disponible para ${product.name}.`);
+      return;
+    }
+
+    const existingIndex = lines.findIndex((line) => line.product.id === product.id);
+    if (existingIndex === -1) {
+      setLines([
+        ...lines,
         {
           product,
           qty: 1,
@@ -59,28 +248,103 @@ export default function PosPage() {
           unitCost: Number(product.default_price) * 0.6,
           discountPct: 0,
         },
-      ];
-    });
-  }
-
-  function updateLine(index: number, patch: Partial<CartLine>) {
-    setLines((prev) => prev.map((line, lineIndex) => (lineIndex === index ? { ...line, ...patch } : line)));
-  }
-
-  async function createSale() {
-    setErrorMessage(null);
-
-    if (lines.length === 0) {
-      setErrorMessage("Debes agregar al menos un producto.");
+      ]);
+      setSearch("");
+      setProducts([]);
+      setSearchOpen(false);
+      setInfoMessage(null);
       return;
     }
 
+    const existingLine = lines[existingIndex];
+    if (existingLine.qty >= productStock) {
+      setInfoMessage(`Stock máximo alcanzado para ${product.name}.`);
+      return;
+    }
+
+    setLines(
+      lines.map((line, lineIndex) => (lineIndex === existingIndex ? { ...line, qty: line.qty + 1 } : line)),
+    );
+    setSearch("");
+    setProducts([]);
+    setSearchOpen(false);
+    setInfoMessage(null);
+  }
+
+  function updateLine(index: number, patch: Partial<CartLine>) {
+    setLines(lines.map((line, lineIndex) => (lineIndex === index ? { ...line, ...patch } : line)));
+  }
+
+  function setLineQty(index: number, nextQty: number) {
+    const targetLine = lines[index];
+    if (!targetLine) {
+      return;
+    }
+
+    const maxQty = Math.max(0, Number(targetLine.product.stock));
+    const sanitizedQty = Number.isFinite(nextQty) ? nextQty : 0;
+    const clampedQty = Math.min(Math.max(0, sanitizedQty), maxQty);
+
+    if (sanitizedQty > maxQty) {
+      setInfoMessage(`Stock máximo alcanzado para ${targetLine.product.name}.`);
+    } else {
+      setInfoMessage(null);
+    }
+
+    if (clampedQty <= 0) {
+      setLines(lines.filter((_, lineIndex) => lineIndex !== index));
+      return;
+    }
+
+    setLines(lines.map((line, lineIndex) => (lineIndex === index ? { ...line, qty: clampedQty } : line)));
+  }
+
+  function removeLine(productId: string) {
+    setLines(lines.filter((line) => line.product.id !== productId));
+  }
+
+  function openCheckout() {
+    if (lines.length === 0) {
+      setErrorMessage("Debes agregar al menos un producto antes de cobrar.");
+      return;
+    }
+
+    setErrorMessage(null);
+    setInfoMessage(null);
+    setPaymentMethod("CASH");
+    setUseInstallments(false);
+    setSelectedInstallmentPlanId("");
+    setCashReceived(total.toFixed(2));
+    setCheckoutOpen(true);
+  }
+
+  async function handleCheckoutConfirm() {
     const payloadTotal = Number(total.toFixed(2));
     if (payloadTotal < 0) {
       setErrorMessage("El total no puede ser negativo.");
       return;
     }
 
+    if (paymentMethod === "CASH") {
+      if (!cashReceived) {
+        setErrorMessage("Captura cuánto entregó el cliente.");
+        return;
+      }
+      if (!Number.isFinite(receivedAmount) || receivedAmount < payloadTotal) {
+        setErrorMessage("El efectivo recibido debe ser mayor o igual al total.");
+        return;
+      }
+    }
+
+    if (paymentMethod === "CARD" && !selectedCardPlan) {
+      setErrorMessage("No hay un plan de comisión disponible para tarjeta.");
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage(null);
+
+    let draftSale: SaleResponse | null = null;
     try {
       const payload = {
         lines: lines.map((line) => ({
@@ -94,7 +358,8 @@ export default function PosPage() {
           {
             method: paymentMethod,
             amount: payloadTotal.toFixed(2),
-            card_type: paymentMethod === "CARD" ? cardType : undefined,
+            card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
+            card_type: paymentMethod === "CARD" ? legacyCardTypeForPlan(selectedCardPlan) : undefined,
           },
         ],
         override_admin_username: overrideUser || undefined,
@@ -102,199 +367,533 @@ export default function PosPage() {
         override_reason: overrideReason || undefined,
       };
 
-      const created = await salesService.createSale(payload);
-      setSale(created);
+      draftSale = await salesService.createSale(payload);
+      const confirmedSale = await salesService.confirmSale(draftSale.id);
+      setCompletedSale(confirmedSale);
+      setChangeDue(paymentMethod === "CASH" ? Math.max(receivedAmount - payloadTotal, 0) : 0);
+      resetCheckoutState();
+      resetSaleBuilder();
+      setSuccessOpen(true);
+      setInfoMessage("Venta cobrada correctamente.");
     } catch (error) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.detail);
+        if (draftSale) {
+          setErrorMessage(`La venta ${draftSale.id} quedó en borrador pero no se pudo confirmar: ${error.detail}`);
+        } else {
+          setErrorMessage(error.detail);
+        }
       } else {
-        setErrorMessage("No fue posible crear la venta.");
+        setErrorMessage(draftSale ? `La venta ${draftSale.id} quedó en borrador pero no se pudo confirmar.` : "No fue posible cobrar la venta.");
       }
-    }
-  }
-
-  async function confirmSale() {
-    if (!sale) {
-      return;
-    }
-    setErrorMessage(null);
-    try {
-      const confirmed = await salesService.confirmSale(sale.id);
-      setSale(confirmed);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "No fue posible confirmar.");
-    }
-  }
-
-  async function voidSale() {
-    if (!sale) {
-      return;
-    }
-    setErrorMessage(null);
-    try {
-      const voided = await salesService.voidSale(sale.id, "Void solicitado desde POS UI");
-      setSale(voided);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.detail);
-      } else {
-        setErrorMessage("No fue posible anular la venta.");
-      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">POS</Typography>
+      <Typography variant="h4">Nueva Venta</Typography>
 
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+      {infoMessage ? <Alert severity="info">{infoMessage}</Alert> : null}
 
-      <Paper sx={{ p: 2.5 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-          <TextField
-            label="Buscar producto"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            fullWidth
-          />
-          <Button variant="contained" onClick={handleSearch}>
-            Buscar
-          </Button>
-        </Stack>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 3,
+          gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.8fr) minmax(320px, 0.9fr)" },
+          alignItems: "start",
+        }}
+      >
+        <Stack spacing={3}>
+          <ClickAwayListener onClickAway={() => setSearchOpen(false)}>
+            <Box sx={{ position: "relative" }}>
+              <Paper sx={{ p: 2.5 }}>
+                <Stack spacing={1.25}>
+                  <TextField
+                    label="Buscar producto"
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setErrorMessage(null);
+                    }}
+                    onFocus={() => {
+                      if (search.trim().length >= 2) {
+                        setSearchOpen(true);
+                      }
+                    }}
+                    placeholder="Busca por nombre o SKU"
+                    fullWidth
+                    helperText={search.trim().length === 1 ? "Escribe al menos 2 caracteres para buscar." : " "}
+                  />
 
-        <Stack spacing={1} sx={{ mt: 2 }}>
-          {products.map((product) => (
-            <Box key={product.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Stack>
-                <Typography>{product.name}</Typography>
-                <Typography color="text.secondary" variant="body2">
-                  SKU {product.sku} | Stock {product.stock}
-                </Typography>
-              </Stack>
-              <Button variant="outlined" onClick={() => addLine(product)}>
-                Agregar
-              </Button>
+                  <Typography color="text.secondary" variant="body2">
+                    Agrega productos tocando una opción del listado.
+                  </Typography>
+                </Stack>
+              </Paper>
+
+              {showSearchMenu ? (
+                <Paper
+                  elevation={10}
+                  sx={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    borderRadius: 3,
+                    overflow: "hidden",
+                    border: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  {searchLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 2, py: 1.5 }}>
+                      <CircularProgress size={18} />
+                      <Typography color="text.secondary" variant="body2">
+                        Buscando productos...
+                      </Typography>
+                    </Stack>
+                  ) : null}
+
+                  {!searchLoading && products.length === 0 ? (
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                      <Typography color="text.secondary" variant="body2">
+                        No hay productos para la búsqueda actual.
+                      </Typography>
+                    </Box>
+                  ) : null}
+
+                  {!searchLoading ? (
+                    <Stack divider={<Divider flexItem />}>
+                      {products.map((product) => {
+                        const stock = Number(product.stock);
+                        const disabled = stock <= 0;
+
+                        return (
+                          <ButtonBase
+                            key={product.id}
+                            onClick={() => addOrIncrementLine(product)}
+                            disabled={disabled}
+                            sx={{
+                              width: "100%",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              px: 2,
+                              py: 1.5,
+                              textAlign: "left",
+                              opacity: disabled ? 0.55 : 1,
+                            }}
+                          >
+                            <Stack spacing={0.5} alignItems="flex-start">
+                              <Typography fontWeight={700}>{product.name}</Typography>
+                              <Typography color="text.secondary" variant="body2">
+                                SKU {product.sku}
+                              </Typography>
+                            </Stack>
+
+                            <Stack spacing={0.75} alignItems="flex-end">
+                              <Typography fontWeight={800} variant="h6">
+                                {currency(Number(product.default_price))}
+                              </Typography>
+                              {disabled ? (
+                                <Chip size="small" label="Sin stock" color="default" />
+                              ) : (
+                                stockChip(stock)
+                              )}
+                            </Stack>
+                          </ButtonBase>
+                        );
+                      })}
+                    </Stack>
+                  ) : null}
+                </Paper>
+              ) : null}
             </Box>
-          ))}
-        </Stack>
-      </Paper>
+          </ClickAwayListener>
 
-      <Paper sx={{ p: 2.5 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Carrito
-        </Typography>
-        <Stack spacing={2}>
-          {lines.map((line, index) => (
-            <Stack key={line.product.id} direction={{ xs: "column", md: "row" }} spacing={1}>
-              <TextField value={line.product.name} disabled sx={{ flex: 2 }} />
-              <TextField
-                label="Qty"
-                type="number"
-                value={line.qty}
-                onChange={(event) => updateLine(index, { qty: Number(event.target.value) })}
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                label="Precio"
-                type="number"
-                value={line.unitPrice}
-                onChange={(event) => updateLine(index, { unitPrice: Number(event.target.value) })}
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                label="Descuento %"
-                type="number"
-                value={line.discountPct}
-                onChange={(event) => updateLine(index, { discountPct: Number(event.target.value) })}
-                sx={{ flex: 1 }}
-              />
+          <Paper sx={{ p: 2.5 }}>
+            <Stack spacing={2}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6">Carrito</Typography>
+                <Chip size="small" label={`${itemCount} artículos`} />
+              </Stack>
+
+              {lines.length === 0 ? (
+                <Alert severity="info">Aún no agregas productos al carrito.</Alert>
+              ) : (
+                <Stack spacing={1.5}>
+                  {lines.map((line, index) => {
+                    const stock = Number(line.product.stock);
+                    const lineSubtotal = line.qty * line.unitPrice;
+                    const lineDiscount = lineSubtotal * (line.discountPct / 100);
+                    const lineTotal = lineSubtotal - lineDiscount;
+
+                    return (
+                      <Paper
+                        key={line.product.id}
+                        variant="outlined"
+                        sx={{ p: 1.5, borderRadius: 2.5 }}
+                      >
+                        <Stack spacing={1.25}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                            <Stack spacing={0.5}>
+                              <Typography fontWeight={700}>{line.product.name}</Typography>
+                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                {stockChip(stock)}
+                                <Typography color="text.secondary" variant="body2">
+                                  Unitario {currency(line.unitPrice)}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              <Typography fontWeight={800}>{currency(lineTotal)}</Typography>
+                              <IconButton
+                                aria-label={`Eliminar ${line.product.name}`}
+                                onClick={() => removeLine(line.product.id)}
+                                sx={{ color: "error.main" }}
+                              >
+                                <DeleteOutlineRoundedIcon />
+                              </IconButton>
+                            </Stack>
+                          </Stack>
+
+                          <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={1.25}
+                            alignItems={{ sm: "center" }}
+                            justifyContent="space-between"
+                          >
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              <IconButton
+                                aria-label={`Reducir cantidad de ${line.product.name}`}
+                                onClick={() => setLineQty(index, line.qty - 1)}
+                                color="primary"
+                              >
+                                <RemoveRoundedIcon />
+                              </IconButton>
+                              <TextField
+                                size="small"
+                                label="Cant."
+                                type="number"
+                                value={line.qty}
+                                onChange={(event) => setLineQty(index, Number(event.target.value))}
+                                sx={{ width: 96 }}
+                              />
+                              <IconButton
+                                aria-label={`Agregar cantidad de ${line.product.name}`}
+                                onClick={() => setLineQty(index, line.qty + 1)}
+                                color="primary"
+                                disabled={line.qty >= stock}
+                              >
+                                <AddRoundedIcon />
+                              </IconButton>
+                            </Stack>
+
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <TextField
+                                size="small"
+                                label="Precio"
+                                type="number"
+                                value={line.unitPrice}
+                                onChange={(event) => updateLine(index, { unitPrice: Number(event.target.value) })}
+                                sx={{ width: 120 }}
+                              />
+                              <TextField
+                                size="small"
+                                label="Desc %"
+                                type="number"
+                                value={line.discountPct}
+                                onChange={(event) => updateLine(index, { discountPct: Number(event.target.value) })}
+                                sx={{ width: 110 }}
+                              />
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Paper>
+                    );
+                  })}
+                </Stack>
+              )}
             </Stack>
-          ))}
-        </Stack>
+          </Paper>
 
-        <Divider sx={{ my: 2 }} />
-        <Stack spacing={1}>
-          <Typography>Subtotal: {currency(subtotal)}</Typography>
-          <Typography>Descuento: {currency(discount)}</Typography>
-          <Typography variant="h6">Total: {currency(total)}</Typography>
-        </Stack>
-
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ mt: 2 }}>
-          <TextField
-            select
-            label="Método de pago"
-            value={paymentMethod}
-            onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-            sx={{ minWidth: 200 }}
-          >
-            <MenuItem value="CASH">CASH</MenuItem>
-            <MenuItem value="CARD">CARD</MenuItem>
-          </TextField>
-          {paymentMethod === "CARD" ? (
-            <TextField
-              select
-              label="Tipo tarjeta"
-              value={cardType}
-              onChange={(event) => setCardType(event.target.value as CardType)}
-              sx={{ minWidth: 200 }}
+          <Paper sx={{ p: 2.5 }}>
+            <Button
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              endIcon={
+                <ExpandMoreRoundedIcon
+                  sx={{
+                    transform: showAdvanced ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                />
+              }
             >
-              <MenuItem value="NORMAL">NORMAL</MenuItem>
-              <MenuItem value="MSI_3">MSI_3</MenuItem>
-            </TextField>
-          ) : null}
+              Opciones avanzadas
+            </Button>
+
+            <Collapse in={showAdvanced}>
+              <Stack spacing={1.5} sx={{ mt: 2 }}>
+                <Typography variant="subtitle2">Autorización admin</Typography>
+                <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+                  <TextField
+                    label="Admin username"
+                    value={overrideUser}
+                    onChange={(event) => setOverrideUser(event.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Admin password"
+                    type="password"
+                    value={overridePass}
+                    onChange={(event) => setOverridePass(event.target.value)}
+                    fullWidth
+                  />
+                </Stack>
+                <TextField
+                  label="Motivo override"
+                  value={overrideReason}
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                  fullWidth
+                />
+              </Stack>
+            </Collapse>
+          </Paper>
         </Stack>
 
-        <Stack spacing={1.5} sx={{ mt: 2 }}>
-          <Typography variant="subtitle2">Override admin (solo si aplica)</Typography>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
-            <TextField
-              label="Admin username"
-              value={overrideUser}
-              onChange={(event) => setOverrideUser(event.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Admin password"
-              type="password"
-              value={overridePass}
-              onChange={(event) => setOverridePass(event.target.value)}
-              fullWidth
-            />
-          </Stack>
-          <TextField
-            label="Motivo override"
-            value={overrideReason}
-            onChange={(event) => setOverrideReason(event.target.value)}
-            fullWidth
-          />
-        </Stack>
+        <Paper
+          sx={{
+            p: 2.5,
+            borderRadius: 3,
+            position: { lg: "sticky" },
+            top: { lg: 24 },
+          }}
+        >
+          <Stack spacing={2}>
+            <Typography variant="h6">Cuenta</Typography>
 
-        <Button variant="contained" sx={{ mt: 2 }} onClick={createSale}>
-          Crear venta
-        </Button>
-      </Paper>
-
-      {sale ? (
-        <Paper sx={{ p: 2.5 }}>
-          <Stack spacing={1.5}>
-            <Typography variant="h6">Resultado de venta</Typography>
-            <Typography>ID: {sale.id}</Typography>
-            <Typography>
-              Estado: <Chip label={sale.status} size="small" />
-            </Typography>
-            <Typography>Total: {sale.total}</Typography>
-
-            <Stack direction="row" spacing={1}>
-              <Button variant="contained" onClick={confirmSale} disabled={sale.status !== "DRAFT"}>
-                Confirmar
-              </Button>
-              <Button variant="outlined" color="error" onClick={voidSale} disabled={sale.status !== "CONFIRMED"}>
-                Void
-              </Button>
+            <Stack spacing={1.25}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary">Subtotal</Typography>
+                <Typography fontWeight={700}>{currency(subtotal)}</Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary">Descuento</Typography>
+                <Typography fontWeight={700}>{currency(discount)}</Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary">Productos</Typography>
+                <Typography fontWeight={700}>{itemCount}</Typography>
+              </Stack>
             </Stack>
+
+            <Divider />
+
+            <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+              <Typography variant="h6">Total</Typography>
+              <Typography variant="h4" fontWeight={900}>
+                {currency(total)}
+              </Typography>
+            </Stack>
+
+            <Typography color="text.secondary" variant="body2">
+              Revisa el total y abre el modal de cobro para elegir forma de pago.
+            </Typography>
+
+            <Button
+              variant="contained"
+              onClick={openCheckout}
+              disabled={lines.length === 0}
+              sx={{
+                mt: 1,
+                py: 1.75,
+                borderRadius: 3,
+                fontSize: "1.05rem",
+                fontWeight: 800,
+                backgroundColor: "#1f8f4d",
+                "&:hover": {
+                  backgroundColor: "#18743e",
+                },
+              }}
+            >
+              Cobrar: {currency(total)}
+            </Button>
           </Stack>
         </Paper>
-      ) : null}
+      </Box>
+
+      <Dialog
+        open={checkoutOpen}
+        onClose={() => {
+          if (!submitting) {
+            resetCheckoutState();
+          }
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Cobrar venta</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography color="text.secondary" variant="body2">
+                Total a cobrar
+              </Typography>
+              <Typography variant="h5" fontWeight={900}>
+                {currency(total)}
+              </Typography>
+            </Stack>
+
+            <TextField
+              select
+              label="Forma de pago"
+              value={paymentMethod}
+              onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+              fullWidth
+            >
+              <MenuItem value="CASH">Efectivo</MenuItem>
+              <MenuItem value="CARD">Tarjeta</MenuItem>
+            </TextField>
+
+            {paymentMethod === "CASH" ? (
+              <Stack spacing={1.5}>
+                <TextField
+                  label="Cantidad entregada por el cliente"
+                  value={cashReceived}
+                  onChange={(event) => setCashReceived(toMoneyInput(event.target.value))}
+                  placeholder="0.00"
+                  fullWidth
+                />
+
+                <Typography color="text.secondary" variant="body2">
+                  Sugerencias rápidas
+                </Typography>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  {cashSuggestions.map((suggestion) => (
+                    <Button
+                      key={suggestion}
+                      variant="outlined"
+                      onClick={() => setCashReceived(suggestion.toFixed(2))}
+                      sx={{ justifyContent: "space-between" }}
+                      fullWidth
+                    >
+                      {currency(suggestion)}
+                    </Button>
+                  ))}
+                </Stack>
+
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography color="text.secondary" variant="body2">
+                    Cambio estimado
+                  </Typography>
+                  <Typography fontWeight={800}>{currency(previewChange)}</Typography>
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {paymentMethod === "CARD" ? (
+              <Stack spacing={1.5}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={useInstallments}
+                      onChange={(event) => setUseInstallments(event.target.checked)}
+                      disabled={cardPlansQuery.isLoading || installmentPlans.length === 0}
+                    />
+                  }
+                  label="Meses sin intereses"
+                />
+
+                {useInstallments ? (
+                  installmentPlans.length > 0 ? (
+                    <TextField
+                      select
+                      label="Plan MSI"
+                      value={selectedInstallmentPlanId}
+                      onChange={(event) => setSelectedInstallmentPlanId(event.target.value)}
+                      fullWidth
+                    >
+                      {installmentPlans.map((plan) => (
+                        <MenuItem key={plan.id} value={plan.id}>
+                          {plan.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <Alert severity="warning">No hay planes MSI activos configurados.</Alert>
+                  )
+                ) : null}
+
+                {cardPlansQuery.isError ? (
+                  <Alert severity="error">No fue posible cargar los planes de comisión de tarjeta.</Alert>
+                ) : null}
+
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography color="text.secondary" variant="body2">
+                    Comisión estimada
+                  </Typography>
+                  <Typography fontWeight={800}>
+                    {currency(estimatedCommission)} ({(Number(selectedCardPlan?.commission_rate ?? 0) * 100).toFixed(2)}%)
+                  </Typography>
+                </Stack>
+              </Stack>
+            ) : null}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={resetCheckoutState} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleCheckoutConfirm}
+            disabled={submitting}
+            variant="contained"
+            sx={{
+              backgroundColor: "#1f8f4d",
+              "&:hover": {
+                backgroundColor: "#18743e",
+              },
+            }}
+          >
+            {submitting ? "Procesando..." : `Confirmar cobro ${currency(total)}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={successOpen} onClose={() => setSuccessOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Venta completada</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ pt: 1 }}>
+            <Alert severity="success">La venta quedó confirmada correctamente.</Alert>
+
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography color="text.secondary">Cambio a entregar</Typography>
+              <Typography variant="h5" fontWeight={900}>
+                {currency(changeDue)}
+              </Typography>
+            </Stack>
+
+            <Divider />
+
+            <Typography color="text.secondary" variant="body2">
+              Resumen
+            </Typography>
+            <Typography>ID: {completedSale?.id}</Typography>
+            <Typography>Total: {completedSale ? currency(Number(completedSale.total)) : currency(0)}</Typography>
+            <Typography>Estado: {completedSale?.status ?? "CONFIRMED"}</Typography>
+            <Typography>Artículos: {completedItemCount}</Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuccessOpen(false)} variant="contained">
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

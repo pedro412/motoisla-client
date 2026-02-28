@@ -1,4 +1,5 @@
 import PointOfSaleRoundedIcon from "@mui/icons-material/PointOfSaleRounded";
+import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
@@ -8,10 +9,18 @@ import type { AppNavItem } from "@/types/navigation";
 export const privateNavItems: AppNavItem[] = [
   {
     key: "pos",
-    label: "POS",
+    label: "Nueva Venta",
     href: "/pos",
     icon: <PointOfSaleRoundedIcon fontSize="small" />,
     module: "pos",
+    requiredRoles: ["ADMIN", "CASHIER"],
+  },
+  {
+    key: "sales",
+    label: "Ventas",
+    href: "/ventas",
+    icon: <ReceiptLongRoundedIcon fontSize="small" />,
+    module: "sales",
     requiredRoles: ["ADMIN", "CASHIER"],
   },
   {

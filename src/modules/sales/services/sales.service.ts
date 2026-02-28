@@ -1,12 +1,24 @@
 import { httpClient } from "@/lib/api/http-client";
 import type { PaginatedResponse } from "@/lib/types/api";
-import type { ProductSearchItem, SaleCreatePayload, SaleResponse } from "@/lib/types/sales";
+import type { CardCommissionPlan, ProductSearchItem, SaleCreatePayload, SaleHistoryItem, SaleResponse } from "@/lib/types/sales";
 
 export const salesService = {
   searchProducts(params: { q?: string; page?: number }) {
     return httpClient.get<PaginatedResponse<ProductSearchItem>>("/products/", {
       q: params.q,
       page: params.page,
+    });
+  },
+
+  listCardCommissionPlans(params?: { page?: number }) {
+    return httpClient.get<PaginatedResponse<CardCommissionPlan>>("/card-commission-plans/", {
+      page: params?.page,
+    });
+  },
+
+  listSales(params?: { page?: number }) {
+    return httpClient.get<PaginatedResponse<SaleHistoryItem>>("/sales/", {
+      page: params?.page,
     });
   },
 
