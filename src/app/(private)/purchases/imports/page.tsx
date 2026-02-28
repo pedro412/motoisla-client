@@ -25,7 +25,8 @@ import { useRouter } from "next/navigation";
 
 import { ApiError } from "@/lib/api/errors";
 import type { ImportLine } from "@/lib/types/purchases";
-import { parseMyesaInvoice } from "@/modules/purchases/parsers/myesa.parser";
+import { productsService } from "@/modules/products/services/products.service";
+import { applyKnownProductMatches, parseMyesaInvoice } from "@/modules/purchases/parsers/myesa.parser";
 import { purchasesService } from "@/modules/purchases/services/purchases.service";
 import { taxonomyService } from "@/modules/taxonomy/services/taxonomy.service";
 
@@ -145,7 +146,7 @@ function toEditableLine(line: ReturnType<typeof parseMyesaInvoice>[number], inde
     product_type_name: line.product_type_name,
     brand: null,
     product_type: null,
-    matched_product: null,
+    matched_product: line.matched_product ?? null,
     match_status: line.match_status,
     is_selected: line.is_selected,
     notes: line.notes,
@@ -474,9 +475,20 @@ export default function PurchasesImportsPage() {
         queryFn: () => taxonomyService.searchBrands(""),
       });
 
-      const parsedLines = parseMyesaInvoice(rawText, {
+      const locallyParsedLines = parseMyesaInvoice(rawText, {
         knownBrands: allBrandsResponse.results.map((brand) => brand.name),
-      }).map(toEditableLine);
+      });
+      const uniqueSkus = [...new Set(locallyParsedLines.map((line) => line.sku.trim().toUpperCase()).filter(Boolean))];
+      const matchedProducts = (
+        await Promise.all(
+          uniqueSkus.map(async (sku) => {
+            const response = await productsService.listProducts({ q: sku, page: 1 });
+            return response.results.find((product) => product.sku.trim().toUpperCase() === sku) ?? null;
+          }),
+        )
+      ).filter((product): product is NonNullable<typeof product> => Boolean(product));
+
+      const parsedLines = applyKnownProductMatches(locallyParsedLines, matchedProducts).map(toEditableLine);
       setLines(parsedLines);
 
       const parsedSubtotal = parsedLines

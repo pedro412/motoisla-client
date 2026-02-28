@@ -1,4 +1,5 @@
 import type { MatchStatus } from "@/lib/types/purchases";
+import type { ProductListItem } from "@/lib/types/products";
 
 const IVA_RATE = 0.16;
 const PUBLIC_MARKUP = 1.3;
@@ -16,6 +17,7 @@ export interface ParsedPreviewLine {
   notes: string;
   raw_line: string;
   match_status: MatchStatus;
+  matched_product?: string | null;
 }
 
 interface PendingLine {
@@ -23,6 +25,42 @@ interface PendingLine {
   qty: number | null;
   name: string;
   rawLine: string;
+}
+
+export function applyKnownProductMatches(
+  lines: ParsedPreviewLine[],
+  products: Array<Pick<ProductListItem, "id" | "sku" | "brand_name" | "product_type_name">>,
+): ParsedPreviewLine[] {
+  const bySku = new Map(products.map((product) => [product.sku.trim().toUpperCase(), product]));
+
+  return lines.map((line) => {
+    if (line.match_status === "INVALID") {
+      return line;
+    }
+
+    const matchedProduct = bySku.get(line.sku.trim().toUpperCase());
+    if (!matchedProduct) {
+      return {
+        ...line,
+        matched_product: null,
+        match_status: line.sku ? "NEW_PRODUCT" : "INVALID",
+      };
+    }
+
+    const nextBrandName = line.brand_name || matchedProduct.brand_name || "";
+    const nextProductTypeName = line.product_type_name || matchedProduct.product_type_name || "";
+    const canClearTaxonomyNote =
+      line.notes === "Completa marca/tipo antes de confirmar." && nextBrandName.trim() && nextProductTypeName.trim();
+
+    return {
+      ...line,
+      matched_product: matchedProduct.id,
+      match_status: "MATCHED_PRODUCT",
+      brand_name: nextBrandName,
+      product_type_name: nextProductTypeName,
+      notes: canClearTaxonomyNote ? "" : line.notes,
+    };
+  });
 }
 
 interface ParseMyesaInvoiceOptions {

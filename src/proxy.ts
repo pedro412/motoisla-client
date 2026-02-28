@@ -18,6 +18,7 @@ export function proxy(request: NextRequest) {
   const isPrivatePath =
     pathname.startsWith("/pos") ||
     pathname.startsWith("/purchases") ||
+    pathname.startsWith("/products") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/ventas");
@@ -34,6 +35,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  if (pathname.startsWith("/products") && hasAccess && role === "INVESTOR") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   if (pathname.startsWith("/login") && hasAccess) {
     return redirectByRole(request);
   }
@@ -42,5 +47,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/pos/:path*", "/purchases/:path*", "/admin/:path*", "/dashboard/:path*", "/ventas/:path*"],
+  matcher: ["/login", "/pos/:path*", "/purchases/:path*", "/products/:path*", "/admin/:path*", "/dashboard/:path*", "/ventas/:path*"],
 };

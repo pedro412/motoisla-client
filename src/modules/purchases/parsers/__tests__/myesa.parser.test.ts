@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseMyesaInvoice } from "@/modules/purchases/parsers/myesa.parser";
+import { applyKnownProductMatches, parseMyesaInvoice } from "@/modules/purchases/parsers/myesa.parser";
 
 describe("parseMyesaInvoice", () => {
   it("parses MYESA invoice rows and computes default prices", () => {
@@ -66,5 +66,26 @@ CLAVE PRODUCTO: 39121903 CLAVE PEDIMENTO: 25 16 1767 5003538
     expect(result).toHaveLength(1);
     expect(result[0].brand_name).toBe("R7");
     expect(result[0].product_type_name).toBe("CASCOS ABATIBLES");
+  });
+
+  it("reconciles parsed lines with existing products by exact sku", () => {
+    const parsed = parseMyesaInvoice(`
+** 5124-1037 1 H87 CANDADO DISCO FRENO PROMOTO CON ALARMA CDA1 CROMO
+195.80 195.80
+`);
+
+    const reconciled = applyKnownProductMatches(parsed, [
+      {
+        id: "product-1",
+        sku: "5124-1037",
+        brand_name: "PROMOTO",
+        product_type_name: "CANDADOS",
+      },
+    ]);
+
+    expect(reconciled[0].match_status).toBe("MATCHED_PRODUCT");
+    expect(reconciled[0].matched_product).toBe("product-1");
+    expect(reconciled[0].brand_name).toBe("PROMOTO");
+    expect(reconciled[0].product_type_name).toBe("CANDADOS");
   });
 });

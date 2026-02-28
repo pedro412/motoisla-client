@@ -14,6 +14,7 @@
 - Reportes admin (`/admin/reports`) con `/metrics` y `/reports/sales`.
 - Compras (`/purchases/imports`) con flujo parse local MYESA + preview editable + `preview-confirm` backend.
 - Cálculo de precio público con margen en tiempo real.
+- Productos (`/products`) con listado interno, filtros, detalle, edición, borrado y movimientos de inventario por producto.
 - UI shell privado con navegación por rol y logout real.
 - Tests base:
   - unit/integration (Vitest)

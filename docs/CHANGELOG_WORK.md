@@ -27,3 +27,10 @@
 - Parser MYESA ahora sugiere `brand_name` y `product_type_name` por heurística.
 - Autocomplete con opción de creación inline para marcas y tipos (`/brands`, `/product-types`).
 - Confirmación envía taxonomy por línea y muestra error claro cuando backend devuelve `taxonomy_not_found`.
+
+## 2026-02-28 (Productos + Inventario)
+- Nuevo módulo privado `/products` con navegación dedicada, listado, búsqueda, filtros por marca/tipo y métricas de conteo.
+- Vista de detalle con precios, utilidad, marca, categoría y tabla de movimientos de inventario.
+- Vista editable con cambio de precios, marca, categoría, stock auditado con razón y borrado con confirmación.
+- Nuevo `MoneyInput` reutilizable con máscara para importes.
+- Ajustes en compras para reconciliar productos existentes por SKU durante parse local y actualizar precios al reimportar.

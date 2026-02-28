@@ -1,6 +1,7 @@
 import PointOfSaleRoundedIcon from "@mui/icons-material/PointOfSaleRounded";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
+import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 
 import type { AppNavItem } from "@/types/navigation";
 
@@ -19,6 +20,14 @@ export const privateNavItems: AppNavItem[] = [
     href: "/purchases",
     icon: <LocalShippingRoundedIcon fontSize="small" />,
     module: "purchases",
+    requiredRoles: ["ADMIN", "CASHIER"],
+  },
+  {
+    key: "products",
+    label: "Productos",
+    href: "/products",
+    icon: <Inventory2RoundedIcon fontSize="small" />,
+    module: "products",
     requiredRoles: ["ADMIN", "CASHIER"],
   },
   {

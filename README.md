@@ -29,6 +29,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - `/catalog/[sku]` detalle público
 - `/login` autenticación
 - `/pos` POS privado
+- `/products` catálogo interno con detalle, edición y movimientos
 - `/admin/reports` reportes admin
 - `/purchases/imports` compras con parseo de factura
 
@@ -50,6 +51,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - Compras por importación con parse local (`MYESA`), preview en cards y confirmación backend transaccional (`preview-confirm`).
 - Captura de `marca` y `tipo de producto` por línea con sugerencia automática + creación inline de taxonomy.
 - Cálculo de `precio_publico` y margen en tiempo real por línea.
+- Módulo privado de `Productos` con listado, filtros por marca/tipo, detalle, edición, borrado y tabla de movimientos.
 
 ### En curso / pendiente
 - Mejorar validaciones y UX de errores en POS.
