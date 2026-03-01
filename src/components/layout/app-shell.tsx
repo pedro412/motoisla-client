@@ -43,6 +43,10 @@ function getTitleFromPath(pathname: string): string {
     return "Ventas";
   }
 
+  if (pathname.startsWith("/apartados")) {
+    return "Apartados";
+  }
+
   return "MotoIsla";
 }
 

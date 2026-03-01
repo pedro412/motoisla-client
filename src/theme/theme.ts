@@ -18,7 +18,7 @@ const theme = createTheme({
     borderRadius: 10,
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: 'var(--font-roboto), "Helvetica", "Arial", sans-serif',
   },
 });
 

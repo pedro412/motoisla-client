@@ -29,7 +29,10 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - `/catalog/[sku]` detalle público
 - `/login` autenticación
 - `/pos` POS privado
+- `/apartados` gestión de apartados
 - `/products` catálogo interno con detalle, edición y movimientos
+- `/ventas` historial de ventas
+- `/ventas/[id]` detalle de venta con cliente, líneas y pagos
 - `/admin/reports` reportes admin
 - `/purchases/imports` compras con parseo de factura
 
@@ -47,7 +50,10 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - Guards de rutas privadas por sesión/rol.
 - Catálogo público con búsqueda y paginación.
 - POS create/confirm/void.
+- POS con cliente opcional por teléfono, saldo a favor y creación de apartados desde carrito.
 - Reportes admin (`/metrics`, `/reports/sales`).
+- Módulo de apartados con listado, detalle, abonos, extensión y vencimiento.
+- Historial de ventas con detalle por venta.
 - Compras por importación con parse local (`MYESA`), preview en cards y confirmación backend transaccional (`preview-confirm`).
 - Captura de `marca` y `tipo de producto` por línea con sugerencia automática + creación inline de taxonomy.
 - Cálculo de `precio_publico` y margen en tiempo real por línea.
@@ -61,9 +67,10 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 
 ### Backlog
 - UI de `expenses`.
-- UI de `layaway`.
 - UI de `investors/ledger`.
 - Multipago POS.
+- Detalle de cliente con historial consolidado de compras.
+- Reimpresión de ticket desde detalle de venta.
 - Carga de imagen en tabla preview de compras (placeholder ya reservado).
 
 ## Documentación

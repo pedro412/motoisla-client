@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Roboto } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { AppProviders } from "@/providers/app-providers";
@@ -9,6 +10,13 @@ export const metadata: Metadata = {
   description: "Frontend operativo para MotoIsla",
 };
 
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  display: "swap",
+  variable: "--font-roboto",
+});
+
 interface RootLayoutProps {
   children: ReactNode;
 }
@@ -16,7 +24,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="es">
-      <body>
+      <body className={roboto.variable}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

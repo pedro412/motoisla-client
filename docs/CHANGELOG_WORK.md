@@ -1,5 +1,13 @@
 # Work Changelog
 
+## 2026-03-01 (Apartados + Clientes + Detalle de Venta)
+- Nuevo flujo de apartados desde `/pos` con captura de cliente por teléfono, anticipo libre y fecha límite.
+- Nuevo módulo `/apartados` con listado, detalle, registro de abonos, extensión y vencimiento manual.
+- Nueva integración de cliente en POS para reutilizar nombre/teléfono y aplicar saldo a favor en ventas normales.
+- Nueva pantalla `/ventas/[id]` con detalle de venta, productos, pagos y resumen de cliente.
+- Ajustes visuales en `/ventas` y `/apartados` para tablas más compactas y etiquetas operativas en español.
+- Tipografía global corregida cargando `Roboto` vía `next/font` para alinear Material UI.
+
 ## 2026-02-27
 - Integración del cliente con backend real vía BFF.
 - Implementación de handlers auth y proxy autenticado.

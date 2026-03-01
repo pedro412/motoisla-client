@@ -31,6 +31,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
+import { customerService } from "@/modules/customers/services/customer.service";
+import { layawayService } from "@/modules/layaway/services/layaway.service";
 import type { CardCommissionPlan, CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
 import { salesService } from "@/modules/sales/services/sales.service";
 
@@ -99,10 +101,20 @@ export default function PosPage() {
   const [overrideUser, setOverrideUser] = useState("");
   const [overridePass, setOverridePass] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerCreditBalance, setCustomerCreditBalance] = useState(0);
+  const [creditToApply, setCreditToApply] = useState("");
+  const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [layawayOpen, setLayawayOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [layawaySubmitting, setLayawaySubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [layawayDeposit, setLayawayDeposit] = useState("");
+  const [layawayNotes, setLayawayNotes] = useState("");
+  const [layawayExpiresAt, setLayawayExpiresAt] = useState("");
   const [useInstallments, setUseInstallments] = useState(false);
   const [selectedInstallmentPlanId, setSelectedInstallmentPlanId] = useState("");
   const [cashReceived, setCashReceived] = useState("");
@@ -186,6 +198,53 @@ export default function PosPage() {
     };
   }, [search]);
 
+  useEffect(() => {
+    if (!layawayExpiresAt) {
+      const next = new Date();
+      next.setDate(next.getDate() + 30);
+      setLayawayExpiresAt(next.toISOString().slice(0, 10));
+    }
+  }, [layawayExpiresAt]);
+
+  useEffect(() => {
+    const phone = customerPhone.trim();
+    if (!phone) {
+      setCustomerCreditBalance(0);
+      return;
+    }
+
+    let active = true;
+    const timeoutId = window.setTimeout(async () => {
+      setCustomerLookupLoading(true);
+      try {
+        const [customer, credit] = await Promise.all([
+          customerService.getCustomerByPhone(phone),
+          customerService.getCreditByPhone(phone),
+        ]);
+        if (!active) {
+          return;
+        }
+        if (customer?.name) {
+          setCustomerName(customer.name);
+        }
+        setCustomerCreditBalance(Number(credit?.balance ?? 0));
+      } catch {
+        if (active) {
+          setCustomerCreditBalance(0);
+        }
+      } finally {
+        if (active) {
+          setCustomerLookupLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [customerPhone]);
+
   const subtotal = lines.reduce((acc, line) => acc + line.qty * line.unitPrice, 0);
   const discount = lines.reduce((acc, line) => acc + line.qty * line.unitPrice * (line.discountPct / 100), 0);
   const total = subtotal - discount;
@@ -202,14 +261,17 @@ export default function PosPage() {
     return installmentPlans.find((plan) => plan.id === selectedInstallmentPlanId) ?? installmentPlans[0] ?? null;
   }, [installmentPlans, normalCardPlan, paymentMethod, selectedInstallmentPlanId, useInstallments]);
   const estimatedCommission = selectedCardPlan ? total * Number(selectedCardPlan.commission_rate) : 0;
-  const cashSuggestions = useMemo(() => buildCashSuggestions(total), [total]);
   const completedItemCount = useMemo(
     () =>
       completedSale?.lines.reduce((acc, line) => acc + Number(line.qty), 0) ?? 0,
     [completedSale],
   );
+  const safeCreditToApply = Math.min(Math.max(Number(creditToApply || 0), 0), customerCreditBalance, total);
+  const remainingAfterCredit = Math.max(total - safeCreditToApply, 0);
+  const cashSuggestions = useMemo(() => buildCashSuggestions(remainingAfterCredit), [remainingAfterCredit]);
   const receivedAmount = Number(cashReceived || 0);
-  const previewChange = paymentMethod === "CASH" && Number.isFinite(receivedAmount) ? Math.max(receivedAmount - total, 0) : 0;
+  const previewChange =
+    paymentMethod === "CASH" && Number.isFinite(receivedAmount) ? Math.max(receivedAmount - remainingAfterCredit, 0) : 0;
 
   function resetCheckoutState() {
     setCheckoutOpen(false);
@@ -217,6 +279,7 @@ export default function PosPage() {
     setUseInstallments(false);
     setSelectedInstallmentPlanId("");
     setCashReceived("");
+    setCreditToApply("");
   }
 
   function resetSaleBuilder() {
@@ -224,6 +287,12 @@ export default function PosPage() {
     setSearch("");
     setProducts([]);
     setSearchOpen(false);
+    setCustomerPhone("");
+    setCustomerName("");
+    setCustomerCreditBalance(0);
+    setCreditToApply("");
+    setLayawayDeposit("");
+    setLayawayNotes("");
     setOverrideUser("");
     setOverridePass("");
     setOverrideReason("");
@@ -318,25 +387,44 @@ export default function PosPage() {
     setCheckoutOpen(true);
   }
 
+  function openLayaway() {
+    if (lines.length === 0) {
+      setErrorMessage("Debes agregar al menos un producto antes de crear un apartado.");
+      return;
+    }
+
+    setErrorMessage(null);
+    setInfoMessage(null);
+    setLayawayDeposit((total * 0.3).toFixed(2));
+    if (!layawayExpiresAt) {
+      const next = new Date();
+      next.setDate(next.getDate() + 30);
+      setLayawayExpiresAt(next.toISOString().slice(0, 10));
+    }
+    setLayawayOpen(true);
+  }
+
   async function handleCheckoutConfirm() {
     const payloadTotal = Number(total.toFixed(2));
+    const creditAmount = Number(safeCreditToApply.toFixed(2));
+    const remainingAmount = Number(remainingAfterCredit.toFixed(2));
     if (payloadTotal < 0) {
       setErrorMessage("El total no puede ser negativo.");
       return;
     }
 
-    if (paymentMethod === "CASH") {
+    if (paymentMethod === "CASH" && remainingAmount > 0) {
       if (!cashReceived) {
         setErrorMessage("Captura cuánto entregó el cliente.");
         return;
       }
-      if (!Number.isFinite(receivedAmount) || receivedAmount < payloadTotal) {
-        setErrorMessage("El efectivo recibido debe ser mayor o igual al total.");
+      if (!Number.isFinite(receivedAmount) || receivedAmount < remainingAmount) {
+        setErrorMessage("El efectivo recibido debe ser mayor o igual al saldo restante.");
         return;
       }
     }
 
-    if (paymentMethod === "CARD" && !selectedCardPlan) {
+    if (paymentMethod === "CARD" && remainingAmount > 0 && !selectedCardPlan) {
       setErrorMessage("No hay un plan de comisión disponible para tarjeta.");
       return;
     }
@@ -346,6 +434,21 @@ export default function PosPage() {
 
     let draftSale: SaleResponse | null = null;
     try {
+      const payments = [];
+      if (creditAmount > 0) {
+        payments.push({
+          method: "CUSTOMER_CREDIT" as PaymentMethod,
+          amount: creditAmount.toFixed(2),
+        });
+      }
+      if (remainingAmount > 0) {
+        payments.push({
+          method: paymentMethod,
+          amount: remainingAmount.toFixed(2),
+          card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
+          card_type: paymentMethod === "CARD" ? legacyCardTypeForPlan(selectedCardPlan) : undefined,
+        });
+      }
       const payload = {
         lines: lines.map((line) => ({
           product: line.product.id,
@@ -354,14 +457,9 @@ export default function PosPage() {
           unit_cost: line.unitCost.toFixed(2),
           discount_pct: line.discountPct.toFixed(2),
         })),
-        payments: [
-          {
-            method: paymentMethod,
-            amount: payloadTotal.toFixed(2),
-            card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
-            card_type: paymentMethod === "CARD" ? legacyCardTypeForPlan(selectedCardPlan) : undefined,
-          },
-        ],
+        payments,
+        customer_phone: customerPhone.trim() || undefined,
+        customer_name: customerName.trim() || undefined,
         override_admin_username: overrideUser || undefined,
         override_admin_password: overridePass || undefined,
         override_reason: overrideReason || undefined,
@@ -370,7 +468,7 @@ export default function PosPage() {
       draftSale = await salesService.createSale(payload);
       const confirmedSale = await salesService.confirmSale(draftSale.id);
       setCompletedSale(confirmedSale);
-      setChangeDue(paymentMethod === "CASH" ? Math.max(receivedAmount - payloadTotal, 0) : 0);
+      setChangeDue(paymentMethod === "CASH" ? Math.max(receivedAmount - remainingAmount, 0) : 0);
       resetCheckoutState();
       resetSaleBuilder();
       setSuccessOpen(true);
@@ -387,6 +485,54 @@ export default function PosPage() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleLayawayConfirm() {
+    const depositAmount = Number(layawayDeposit || 0);
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setErrorMessage("Nombre y teléfono son obligatorios para crear un apartado.");
+      return;
+    }
+    if (!Number.isFinite(depositAmount) || depositAmount <= 0 || depositAmount > total) {
+      setErrorMessage("El anticipo debe ser mayor a 0 y no exceder el total.");
+      return;
+    }
+    if (!layawayExpiresAt) {
+      setErrorMessage("Debes capturar la fecha límite.");
+      return;
+    }
+
+    setLayawaySubmitting(true);
+    setErrorMessage(null);
+    try {
+      await layawayService.createLayaway({
+        customer: {
+          phone: customerPhone.trim(),
+          name: customerName.trim(),
+        },
+        lines: lines.map((line) => ({
+          product: line.product.id,
+          qty: line.qty.toFixed(2),
+          unit_price: line.unitPrice.toFixed(2),
+          unit_cost: line.unitCost.toFixed(2),
+          discount_pct: line.discountPct.toFixed(2),
+        })),
+        deposit_payments: [{ method: "CASH", amount: depositAmount.toFixed(2) }],
+        expires_at: new Date(`${layawayExpiresAt}T23:59:00`).toISOString(),
+        notes: layawayNotes.trim() || undefined,
+      });
+      setLayawayOpen(false);
+      resetSaleBuilder();
+      setInfoMessage("Apartado creado correctamente.");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.detail);
+      } else {
+        setErrorMessage("No fue posible crear el apartado.");
+      }
+    } finally {
+      setLayawaySubmitting(false);
     }
   }
 
@@ -700,8 +846,33 @@ export default function PosPage() {
             </Stack>
 
             <Typography color="text.secondary" variant="body2">
-              Revisa el total y abre el modal de cobro para elegir forma de pago.
+              Puedes registrar cliente para reutilizar su saldo a favor o convertir este carrito en un apartado.
             </Typography>
+
+            <Stack spacing={1.5}>
+              <TextField
+                label="Teléfono del cliente"
+                value={customerPhone}
+                onChange={(event) => setCustomerPhone(event.target.value)}
+                placeholder="9991234567"
+                fullWidth
+              />
+              <TextField
+                label="Nombre del cliente"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Opcional para venta, obligatorio para apartado"
+                fullWidth
+              />
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary" variant="body2">
+                  Saldo a favor disponible
+                </Typography>
+                <Typography fontWeight={800}>
+                  {customerLookupLoading ? "Buscando..." : currency(customerCreditBalance)}
+                </Typography>
+              </Stack>
+            </Stack>
 
             <Button
               variant="contained"
@@ -720,6 +891,10 @@ export default function PosPage() {
               }}
             >
               Cobrar: {currency(total)}
+            </Button>
+
+            <Button variant="outlined" onClick={openLayaway} disabled={lines.length === 0} sx={{ borderRadius: 3, py: 1.4 }}>
+              Crear apartado
             </Button>
           </Stack>
         </Paper>
@@ -748,17 +923,43 @@ export default function PosPage() {
             </Stack>
 
             <TextField
+              label="Teléfono del cliente"
+              value={customerPhone}
+              onChange={(event) => setCustomerPhone(event.target.value)}
+              placeholder="Opcional"
+              fullWidth
+            />
+
+            <TextField
+              label="Nombre del cliente"
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="Se autocompleta si ya existe"
+              fullWidth
+            />
+
+            <TextField
+              label="Aplicar saldo a favor"
+              value={creditToApply}
+              onChange={(event) => setCreditToApply(toMoneyInput(event.target.value))}
+              placeholder="0.00"
+              fullWidth
+              helperText={`Disponible: ${currency(customerCreditBalance)} · Restante: ${currency(remainingAfterCredit)}`}
+            />
+
+            <TextField
               select
               label="Forma de pago"
               value={paymentMethod}
               onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
               fullWidth
+              disabled={remainingAfterCredit <= 0}
             >
               <MenuItem value="CASH">Efectivo</MenuItem>
               <MenuItem value="CARD">Tarjeta</MenuItem>
             </TextField>
 
-            {paymentMethod === "CASH" ? (
+            {paymentMethod === "CASH" && remainingAfterCredit > 0 ? (
               <Stack spacing={1.5}>
                 <TextField
                   label="Cantidad entregada por el cliente"
@@ -795,7 +996,7 @@ export default function PosPage() {
               </Stack>
             ) : null}
 
-            {paymentMethod === "CARD" ? (
+            {paymentMethod === "CARD" && remainingAfterCredit > 0 ? (
               <Stack spacing={1.5}>
                 <FormControlLabel
                   control={
@@ -860,6 +1061,88 @@ export default function PosPage() {
             }}
           >
             {submitting ? "Procesando..." : `Confirmar cobro ${currency(total)}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={layawayOpen}
+        onClose={() => {
+          if (!layawaySubmitting) {
+            setLayawayOpen(false);
+          }
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Crear apartado</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography color="text.secondary" variant="body2">
+                Total del apartado
+              </Typography>
+              <Typography variant="h5" fontWeight={900}>
+                {currency(total)}
+              </Typography>
+            </Stack>
+
+            <TextField
+              label="Teléfono del cliente"
+              value={customerPhone}
+              onChange={(event) => setCustomerPhone(event.target.value)}
+              required
+              fullWidth
+            />
+
+            <TextField
+              label="Nombre del cliente"
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              required
+              fullWidth
+            />
+
+            <TextField
+              label="Anticipo inicial"
+              value={layawayDeposit}
+              onChange={(event) => setLayawayDeposit(toMoneyInput(event.target.value))}
+              helperText={`Sugerido (30%): ${currency(total * 0.3)}`}
+              fullWidth
+            />
+
+            <TextField
+              label="Fecha límite"
+              type="date"
+              value={layawayExpiresAt}
+              onChange={(event) => setLayawayExpiresAt(event.target.value)}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              label="Notas"
+              value={layawayNotes}
+              onChange={(event) => setLayawayNotes(event.target.value)}
+              fullWidth
+              multiline
+              minRows={2}
+            />
+
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography color="text.secondary" variant="body2">
+                Saldo pendiente estimado
+              </Typography>
+              <Typography fontWeight={800}>{currency(Math.max(total - Number(layawayDeposit || 0), 0))}</Typography>
+            </Stack>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLayawayOpen(false)} disabled={layawaySubmitting}>
+            Cancelar
+          </Button>
+          <Button onClick={handleLayawayConfirm} disabled={layawaySubmitting} variant="contained">
+            {layawaySubmitting ? "Guardando..." : "Confirmar apartado"}
           </Button>
         </DialogActions>
       </Dialog>

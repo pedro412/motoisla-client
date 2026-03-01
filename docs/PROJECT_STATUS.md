@@ -1,9 +1,8 @@
 # Project Status - MotoIsla Client
 
 ## Resumen ejecutivo
-- Estado general: **MVP integrado operativo en local** con checkout POS renovado.
+- Estado general: **MVP integrado operativo en local** con checkout POS, apartados y detalle de ventas.
 - Backend target: `motoisla-server` (`/api/v1`) con BFF en Next.
-- Rama activa: `codex/scaffold-admin-dashboard-pr`.
 
 ## Completado
 - Auth BFF con cookies httpOnly (`login`, `refresh`, `logout`, `session`).
@@ -14,7 +13,11 @@
   - `/pos` como `Nueva Venta` con buscador tipo dropdown, carrito compacto y checkout en modal.
   - creación + confirmación en un solo flujo de cobro.
   - soporte de comisión de tarjeta configurable y MSI desde backend.
-- Historial de ventas en `/ventas` con tabla paginada y cancelación por reglas backend.
+- captura opcional de cliente por teléfono, lookup de saldo a favor y creación de apartados desde el carrito.
+- Historial de ventas en `/ventas` con tabla paginada, detalle por venta y cancelación por reglas backend.
+- Apartados:
+  - `/apartados` con listado operativo y filtros.
+  - `/apartados/[id]` con detalle, abonos, extensión y vencimiento.
 - Reportes admin (`/admin/reports`) con `/metrics` y `/reports/sales`.
 - Compras (`/purchases/imports`) con flujo parse local MYESA + preview editable + `preview-confirm` backend.
 - Cálculo de precio público con margen en tiempo real.
@@ -27,8 +30,9 @@
 
 ## Pendiente prioritario
 - Fortalecer validaciones POS por campo (`fields`) y UX de errores finos en modal de cobro.
-- Completar e2e de negocio (POS + compras con assertions de inventario).
+- Completar e2e de negocio (POS + apartados + compras con assertions de inventario).
 - Endurecer concurrencia/locking de compra de inversionistas para evitar carreras de asignación simultánea.
+- Agregar vista de detalle de cliente con historial consolidado para preparar lealtad.
 - Definir/ajustar moneda y formatos finales de operación.
 - Endurecer observabilidad frontend (logging estructurado y captura de errores).
 

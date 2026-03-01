@@ -22,7 +22,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/investors") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/ventas");
+    pathname.startsWith("/ventas") ||
+    pathname.startsWith("/apartados");
 
   if (isPrivatePath && !hasAccess) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -32,7 +33,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/pos", request.url));
   }
 
-  if ((pathname.startsWith("/pos") || pathname.startsWith("/ventas")) && hasAccess && role === "INVESTOR") {
+  if ((pathname.startsWith("/pos") || pathname.startsWith("/ventas") || pathname.startsWith("/apartados")) && hasAccess && role === "INVESTOR") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -52,5 +53,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/pos/:path*", "/purchases/:path*", "/products/:path*", "/investors/:path*", "/admin/:path*", "/dashboard/:path*", "/ventas/:path*"],
+  matcher: ["/login", "/pos/:path*", "/purchases/:path*", "/products/:path*", "/investors/:path*", "/admin/:path*", "/dashboard/:path*", "/ventas/:path*", "/apartados/:path*"],
 };

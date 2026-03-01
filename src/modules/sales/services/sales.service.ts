@@ -22,6 +22,10 @@ export const salesService = {
     });
   },
 
+  getSale(id: string) {
+    return httpClient.get<SaleResponse>(`/sales/${id}/`);
+  },
+
   createSale(payload: SaleCreatePayload) {
     return httpClient.post<SaleCreatePayload, SaleResponse>("/sales/", payload);
   },

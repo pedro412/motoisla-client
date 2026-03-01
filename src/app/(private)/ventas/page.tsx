@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -39,15 +40,29 @@ function formatDateTime(value: string | null) {
   if (!value) {
     return "Sin fecha";
   }
+  const date = new Date(value);
+  const now = new Date();
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  if (isToday) {
+    return `Hoy, ${new Intl.DateTimeFormat("es-MX", { timeStyle: "short" }).format(date)}`;
+  }
+
   return new Intl.DateTimeFormat("es-MX", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function formatPaymentLabel(payment: SaleHistoryPayment) {
   if (payment.method === "CASH") {
     return `Efectivo ${formatMoney(payment.amount)}`;
+  }
+  if (payment.method === "CUSTOMER_CREDIT") {
+    return `Saldo a favor ${formatMoney(payment.amount)}`;
   }
   const suffix = payment.card_plan_label || "Tarjeta";
   return `${suffix} ${formatMoney(payment.amount)}`;
@@ -63,7 +78,18 @@ function statusColor(status: SaleHistoryItem["status"]) {
   return "default";
 }
 
+function statusLabel(status: SaleHistoryItem["status"]) {
+  if (status === "CONFIRMED") {
+    return "Confirmada";
+  }
+  if (status === "VOID") {
+    return "Cancelada";
+  }
+  return "Borrador";
+}
+
 export default function SalesHistoryPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [voidTarget, setVoidTarget] = useState<SaleHistoryItem | null>(null);
@@ -134,11 +160,11 @@ export default function SalesHistoryPage() {
       {salesQuery.data?.results.length ? (
         <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
           <TableContainer sx={{ overflowX: "auto" }}>
-            <Table sx={{ minWidth: 980 }}>
+            <Table sx={{ minWidth: 860 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Fecha</TableCell>
-                  <TableCell>ID</TableCell>
+                  <TableCell>Cliente</TableCell>
                   <TableCell>Cajero</TableCell>
                   <TableCell>Estatus</TableCell>
                   <TableCell>Pagos</TableCell>
@@ -149,30 +175,35 @@ export default function SalesHistoryPage() {
               </TableHead>
               <TableBody>
                 {salesQuery.data.results.map((sale) => (
-                  <TableRow key={sale.id} hover>
+                  <TableRow
+                    key={sale.id}
+                    hover
+                    onClick={() => router.push(`/ventas/${sale.id}`)}
+                    sx={{
+                      cursor: "pointer",
+                      "& > .MuiTableCell-root": {
+                        transition: "background-color 120ms ease",
+                      },
+                    }}
+                  >
                     <TableCell sx={{ whiteSpace: "nowrap" }}>
                       <Typography fontWeight={700} variant="body2">
                         {formatDateTime(sale.created_at)}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ maxWidth: 220 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: "monospace",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {sale.id}
+                    <TableCell sx={{ minWidth: 180 }}>
+                      <Typography fontWeight={700} variant="body2">
+                        {sale.customer_name || "Mostrador"}
+                      </Typography>
+                      <Typography color="text.secondary" variant="caption">
+                        {sale.customer_phone || "-"}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{sale.cashier_username}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip label={sale.status} size="small" color={statusColor(sale.status)} />
+                      <Chip label={statusLabel(sale.status)} size="small" color={statusColor(sale.status)} />
                     </TableCell>
                     <TableCell sx={{ minWidth: 220 }}>
                       <Typography color="text.secondary" variant="body2">
@@ -199,11 +230,13 @@ export default function SalesHistoryPage() {
                           variant="outlined"
                           color="error"
                           size="small"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setVoidTarget(sale);
                             setVoidReason("");
                             setErrorMessage(null);
                           }}
+                          sx={{ fontWeight: 700 }}
                         >
                           Cancelar
                         </Button>

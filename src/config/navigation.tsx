@@ -1,5 +1,6 @@
 import PointOfSaleRoundedIcon from "@mui/icons-material/PointOfSaleRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
@@ -22,6 +23,14 @@ export const privateNavItems: AppNavItem[] = [
     href: "/ventas",
     icon: <ReceiptLongRoundedIcon fontSize="small" />,
     module: "sales",
+    requiredRoles: ["ADMIN", "CASHIER"],
+  },
+  {
+    key: "layaway",
+    label: "Apartados",
+    href: "/apartados",
+    icon: <EventNoteRoundedIcon fontSize="small" />,
+    module: "layaway",
     requiredRoles: ["ADMIN", "CASHIER"],
   },
   {
