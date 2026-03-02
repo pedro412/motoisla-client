@@ -22,6 +22,31 @@ export interface MetricsResponse {
   total_sales: string;
   avg_ticket: string;
   sales_count: number;
+  gross_profit: string;
+  gross_profit_total: string;
+  purchase_spend: string;
+  purchase_count: number;
+  investor_metrics: {
+    investor_backed_sales_total: string;
+    store_owned_sales_total: string;
+    investor_profit_share_total: string;
+    store_profit_share_total: string;
+    inventory_cost_assigned_to_investors: string;
+    store_net_inventory_exposure_change: string;
+  };
+  inventory_snapshot: {
+    cost_value: string;
+    retail_value: string;
+    potential_profit: string;
+    total_units: string;
+    gross_margin_pct: string;
+    store_owned_units: string;
+    investor_assigned_units: string;
+    store_owned_cost_value: string;
+    investor_assigned_cost_value: string;
+    store_owned_potential_profit: string;
+    investor_assigned_potential_profit: string;
+  };
   range: { date_from: string | null; date_to: string | null };
   top_products: MetricsTopProduct[];
   payment_breakdown: {
@@ -59,4 +84,5 @@ export interface SalesReportResponse extends MetricsResponse {
     by_category: ExpenseCategorySummary[];
   };
   net_sales_after_expenses: string;
+  net_profit: string;
 }

@@ -16,7 +16,8 @@ describe("AppSidebar", () => {
     expect(screen.getAllByText("Ventas").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Compras").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Productos").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Admin Reports").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Reportes").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Gastos").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Inversionistas").length).toBeGreaterThan(0);
   });
 });

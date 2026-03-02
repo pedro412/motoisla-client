@@ -30,10 +30,11 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - `/login` autenticación
 - `/pos` POS privado
 - `/apartados` gestión de apartados
+- `/expenses` gastos mensuales, plantillas fijas y cierre operativo
 - `/products` catálogo interno con detalle, edición y movimientos
 - `/ventas` historial de ventas
 - `/ventas/[id]` detalle de venta con cliente, líneas y pagos
-- `/admin/reports` reportes admin
+- `/admin/reports` dashboard financiero con utilidad tienda vs inversionistas
 - `/purchases/imports` compras con parseo de factura
 
 ## Integración backend
@@ -51,7 +52,8 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - Catálogo público con búsqueda y paginación.
 - POS create/confirm/void.
 - POS con cliente opcional por teléfono, saldo a favor y creación de apartados desde carrito.
-- Reportes admin (`/metrics`, `/reports/sales`).
+- Dashboard de `Reportes` (`/admin/reports`) con ventas, compras, gastos, inventario y desglose económico de tienda vs inversionistas.
+- Módulo de `Gastos` (`/expenses`) con plantillas recurrentes, generación mensual y control de pendientes/pagados.
 - Módulo de apartados con listado, detalle, abonos, extensión y vencimiento.
 - Historial de ventas con detalle por venta.
 - Compras por importación con parse local (`MYESA`), preview en cards y confirmación backend transaccional (`preview-confirm`).
@@ -66,11 +68,11 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - E2E profundo de compras (parse cliente/edición/confirm + validación de stock).
 
 ### Backlog
-- UI de `expenses`.
 - UI de `investors/ledger`.
 - Multipago POS.
 - Detalle de cliente con historial consolidado de compras.
 - Reimpresión de ticket desde detalle de venta.
+- Comparativo de `Reportes` contra periodo anterior y drill-down financiero.
 - Carga de imagen en tabla preview de compras (placeholder ya reservado).
 
 ## Documentación

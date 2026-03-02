@@ -1,5 +1,11 @@
 # Work Changelog
 
+## 2026-03-02 (Gastos + Reportes financieros)
+- Nueva pantalla `/expenses` con selector mensual, KPIs operativos y administración de gastos pagados/pendientes.
+- Soporte de plantillas de gastos fijos, generación mensual explícita y marcación de pagos/cancelación desde UI.
+- Dashboard `/admin/reports` rediseñado con KPIs financieros, inventario propio vs inventario de inversionistas y exposición económica reclasificada.
+- Reportes ahora muestran utilidad bruta, participación de inversionistas y utilidad neta real de tienda.
+
 ## 2026-03-01 (Apartados + Clientes + Detalle de Venta)
 - Nuevo flujo de apartados desde `/pos` con captura de cliente por teléfono, anticipo libre y fecha límite.
 - Nuevo módulo `/apartados` con listado, detalle, registro de abonos, extensión y vencimiento manual.

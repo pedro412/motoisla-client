@@ -32,7 +32,11 @@ function getTitleFromPath(pathname: string): string {
   }
 
   if (pathname.startsWith("/admin/reports")) {
-    return "Admin Reports";
+    return "Reportes";
+  }
+
+  if (pathname.startsWith("/expenses")) {
+    return "Gastos";
   }
 
   if (pathname.startsWith("/pos")) {

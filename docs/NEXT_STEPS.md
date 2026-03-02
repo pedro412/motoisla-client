@@ -8,6 +8,7 @@
 5. Agregar detalle de cliente con historial de compras ligado por teléfono.
 6. Ajustar UX de compras para edición masiva de líneas y guardado por lote.
 7. Extender parser cliente a proveedores adicionales además de MYESA.
+8. Agregar comparativos en `Reportes` contra periodo anterior y drill-down de métricas tienda vs inversionistas.
 
 ## P2 - QA funcional
 1. E2E completo de:
@@ -22,10 +23,9 @@
 3. Mejorar telemetría de errores para debugging en local/staging.
 
 ## P4 - Backlog funcional (fuera de sprint)
-1. UI de gastos (`expenses`).
-2. Reinversión y filtros avanzados dentro de `investors`.
-3. Multipago POS.
-4. Carga de imagen por línea en preview de compras.
-5. Deprecar en backend el parse remoto legacy cuando el flujo local esté estabilizado.
-6. Programa de lealtad por cliente usando historial de compras y teléfono como identidad.
-7. Reimpresión de ticket desde detalle de venta y cierre de caja.
+1. Reinversión y filtros avanzados dentro de `investors`.
+2. Multipago POS.
+3. Carga de imagen por línea en preview de compras.
+4. Deprecar en backend el parse remoto legacy cuando el flujo local esté estabilizado.
+5. Programa de lealtad por cliente usando historial de compras y teléfono como identidad.
+6. Reimpresión de ticket desde detalle de venta y cierre de caja.

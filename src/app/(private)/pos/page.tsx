@@ -91,6 +91,41 @@ function stockChip(stock: number) {
   );
 }
 
+function statusBadge(label: string, tone: "sky" | "emerald" | "amber") {
+  const tones = {
+    sky: {
+      bg: "rgba(56, 189, 248, 0.14)",
+      border: "rgba(56, 189, 248, 0.24)",
+      color: "#bae6fd",
+    },
+    emerald: {
+      bg: "rgba(16, 185, 129, 0.14)",
+      border: "rgba(16, 185, 129, 0.24)",
+      color: "#a7f3d0",
+    },
+    amber: {
+      bg: "rgba(245, 158, 11, 0.14)",
+      border: "rgba(245, 158, 11, 0.24)",
+      color: "#fde68a",
+    },
+  } as const;
+  const toneStyles = tones[tone];
+
+  return (
+    <Chip
+      label={label}
+      size="small"
+      sx={{
+        borderRadius: 1.5,
+        fontWeight: 800,
+        backgroundColor: toneStyles.bg,
+        color: toneStyles.color,
+        border: `1px solid ${toneStyles.border}`,
+      }}
+    />
+  );
+}
+
 export default function PosPage() {
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<ProductSearchItem[]>([]);
@@ -538,7 +573,35 @@ export default function PosPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Nueva Venta</Typography>
+      <Paper
+        sx={{
+          p: { xs: 2.25, md: 3 },
+          border: "1px solid rgba(56, 189, 248, 0.14)",
+          background:
+            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+          boxShadow: "0 24px 64px rgba(2, 6, 23, 0.28)",
+        }}
+      >
+        <Stack spacing={2.25}>
+          <Box>
+            <Typography variant="overline" sx={{ color: "#bae6fd", fontWeight: 800, letterSpacing: "0.08em" }}>
+              Punto de venta
+            </Typography>
+            <Typography variant="h4" sx={{ fontWeight: 800 }}>
+              Nueva Venta
+            </Typography>
+            <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 500, mt: 0.5 }}>
+              Construye el carrito, valida al cliente y cierra la operación desde un flujo más claro de caja.
+            </Typography>
+          </Box>
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap flexWrap="wrap">
+            {statusBadge(`${itemCount} artículos`, "sky")}
+            {statusBadge(`Subtotal ${currency(subtotal)}`, "emerald")}
+            {statusBadge(`Descuento ${currency(discount)}`, "amber")}
+          </Stack>
+        </Stack>
+      </Paper>
 
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
       {infoMessage ? <Alert severity="info">{infoMessage}</Alert> : null}
@@ -554,8 +617,24 @@ export default function PosPage() {
         <Stack spacing={3}>
           <ClickAwayListener onClickAway={() => setSearchOpen(false)}>
             <Box sx={{ position: "relative" }}>
-              <Paper sx={{ p: 2.5 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  border: "1px solid rgba(56, 189, 248, 0.14)",
+                  background:
+                    "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+                }}
+              >
                 <Stack spacing={1.25}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                      Buscar producto
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                      Agrega productos por nombre o SKU y arma el carrito sin salir de caja.
+                    </Typography>
+                  </Box>
+
                   <TextField
                     label="Buscar producto"
                     value={search}
@@ -573,9 +652,10 @@ export default function PosPage() {
                     helperText={search.trim().length === 1 ? "Escribe al menos 2 caracteres para buscar." : " "}
                   />
 
-                  <Typography color="text.secondary" variant="body2">
-                    Agrega productos tocando una opción del listado.
-                  </Typography>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap flexWrap="wrap">
+                    {statusBadge("Búsqueda rápida", "sky")}
+                    {statusBadge("Alta visibilidad de stock", "emerald")}
+                  </Stack>
                 </Stack>
               </Paper>
 
@@ -590,8 +670,9 @@ export default function PosPage() {
                     zIndex: 20,
                     borderRadius: 3,
                     overflow: "hidden",
-                    border: "1px solid",
-                    borderColor: "divider",
+                    border: "1px solid rgba(56, 189, 248, 0.14)",
+                    background:
+                      "linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
                   }}
                 >
                   {searchLoading ? (
@@ -659,11 +740,20 @@ export default function PosPage() {
             </Box>
           </ClickAwayListener>
 
-          <Paper sx={{ p: 2.5 }}>
+          <Paper
+            sx={{
+              p: 2.5,
+              border: "1px solid rgba(148, 163, 184, 0.14)",
+              background:
+                "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+            }}
+          >
             <Stack spacing={2}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6">Carrito</Typography>
-                <Chip size="small" label={`${itemCount} artículos`} />
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  Carrito
+                </Typography>
+                {statusBadge(`${itemCount} artículos`, "sky")}
               </Stack>
 
               {lines.length === 0 ? (
@@ -680,7 +770,13 @@ export default function PosPage() {
                       <Paper
                         key={line.product.id}
                         variant="outlined"
-                        sx={{ p: 1.5, borderRadius: 2.5 }}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2.5,
+                          borderColor: "rgba(148, 163, 184, 0.16)",
+                          background:
+                            "linear-gradient(180deg, rgba(30, 41, 59, 0.44) 0%, rgba(15, 23, 42, 0.42) 100%)",
+                        }}
                       >
                         <Stack spacing={1.25}>
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
@@ -766,7 +862,14 @@ export default function PosPage() {
             </Stack>
           </Paper>
 
-          <Paper sx={{ p: 2.5 }}>
+          <Paper
+            sx={{
+              p: 2.5,
+              border: "1px solid rgba(148, 163, 184, 0.14)",
+              background:
+                "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+            }}
+          >
             <Button
               onClick={() => setShowAdvanced((prev) => !prev)}
               endIcon={
@@ -783,7 +886,9 @@ export default function PosPage() {
 
             <Collapse in={showAdvanced}>
               <Stack spacing={1.5} sx={{ mt: 2 }}>
-                <Typography variant="subtitle2">Autorización admin</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                  Autorización admin
+                </Typography>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
                   <TextField
                     label="Admin username"
@@ -816,10 +921,21 @@ export default function PosPage() {
             borderRadius: 3,
             position: { lg: "sticky" },
             top: { lg: 24 },
+            border: "1px solid rgba(16, 185, 129, 0.16)",
+            background:
+              "radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+            boxShadow: "0 20px 48px rgba(2, 6, 23, 0.24)",
           }}
         >
           <Stack spacing={2}>
-            <Typography variant="h6">Cuenta</Typography>
+            <Box>
+              <Typography variant="overline" sx={{ color: "#a7f3d0", fontWeight: 800, letterSpacing: "0.08em" }}>
+                Cierre de caja
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                Cuenta
+              </Typography>
+            </Box>
 
             <Stack spacing={1.25}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -838,12 +954,24 @@ export default function PosPage() {
 
             <Divider />
 
-            <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-              <Typography variant="h6">Total</Typography>
-              <Typography variant="h4" fontWeight={900}>
-                {currency(total)}
-              </Typography>
-            </Stack>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+                background:
+                  "linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 78, 59, 0.14) 100%)",
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  Total
+                </Typography>
+                <Typography variant="h4" fontWeight={900}>
+                  {currency(total)}
+                </Typography>
+              </Stack>
+            </Paper>
 
             <Typography color="text.secondary" variant="body2">
               Puedes registrar cliente para reutilizar su saldo a favor o convertir este carrito en un apartado.
@@ -884,16 +1012,32 @@ export default function PosPage() {
                 borderRadius: 3,
                 fontSize: "1.05rem",
                 fontWeight: 800,
-                backgroundColor: "#1f8f4d",
+                background: "linear-gradient(135deg, #15803d 0%, #16a34a 100%)",
+                boxShadow: "0 14px 28px rgba(22, 163, 74, 0.18)",
                 "&:hover": {
-                  backgroundColor: "#18743e",
+                  background: "linear-gradient(135deg, #166534 0%, #15803d 100%)",
                 },
               }}
             >
               Cobrar: {currency(total)}
             </Button>
 
-            <Button variant="outlined" onClick={openLayaway} disabled={lines.length === 0} sx={{ borderRadius: 3, py: 1.4 }}>
+            <Button
+              variant="outlined"
+              onClick={openLayaway}
+              disabled={lines.length === 0}
+              sx={{
+                borderRadius: 3,
+                py: 1.4,
+                fontWeight: 800,
+                borderColor: "rgba(56, 189, 248, 0.3)",
+                color: "#bae6fd",
+                "&:hover": {
+                  borderColor: "rgba(56, 189, 248, 0.45)",
+                  backgroundColor: "rgba(56, 189, 248, 0.08)",
+                },
+              }}
+            >
               Crear apartado
             </Button>
           </Stack>
@@ -909,18 +1053,50 @@ export default function PosPage() {
         }}
         fullWidth
         maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            border: "1px solid rgba(56, 189, 248, 0.14)",
+            background:
+              "radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+          },
+        }}
       >
-        <DialogTitle>Cobrar venta</DialogTitle>
+        <DialogTitle
+          sx={{
+            borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+            pb: 2,
+          }}
+        >
+          <Stack spacing={0.35}>
+            <Typography variant="overline" sx={{ color: "#bae6fd", fontWeight: 800, letterSpacing: "0.08em" }}>
+              Checkout
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Cobrar venta
+            </Typography>
+          </Stack>
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography color="text.secondary" variant="body2">
-                Total a cobrar
-              </Typography>
-              <Typography variant="h5" fontWeight={900}>
-                {currency(total)}
-              </Typography>
-            </Stack>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+                background:
+                  "linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 78, 59, 0.14) 100%)",
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary" variant="body2">
+                  Total a cobrar
+                </Typography>
+                <Typography variant="h5" fontWeight={900}>
+                  {currency(total)}
+                </Typography>
+              </Stack>
+            </Paper>
 
             <TextField
               label="Teléfono del cliente"
@@ -1054,9 +1230,10 @@ export default function PosPage() {
             disabled={submitting}
             variant="contained"
             sx={{
-              backgroundColor: "#1f8f4d",
+              fontWeight: 800,
+              background: "linear-gradient(135deg, #15803d 0%, #16a34a 100%)",
               "&:hover": {
-                backgroundColor: "#18743e",
+                background: "linear-gradient(135deg, #166534 0%, #15803d 100%)",
               },
             }}
           >
@@ -1074,18 +1251,50 @@ export default function PosPage() {
         }}
         fullWidth
         maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            border: "1px solid rgba(56, 189, 248, 0.14)",
+            background:
+              "radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+          },
+        }}
       >
-        <DialogTitle>Crear apartado</DialogTitle>
+        <DialogTitle
+          sx={{
+            borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+            pb: 2,
+          }}
+        >
+          <Stack spacing={0.35}>
+            <Typography variant="overline" sx={{ color: "#bae6fd", fontWeight: 800, letterSpacing: "0.08em" }}>
+              Reserva
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Crear apartado
+            </Typography>
+          </Stack>
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography color="text.secondary" variant="body2">
-                Total del apartado
-              </Typography>
-              <Typography variant="h5" fontWeight={900}>
-                {currency(total)}
-              </Typography>
-            </Stack>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                border: "1px solid rgba(56, 189, 248, 0.2)",
+                background:
+                  "linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(14, 116, 144, 0.12) 100%)",
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary" variant="body2">
+                  Total del apartado
+                </Typography>
+                <Typography variant="h5" fontWeight={900}>
+                  {currency(total)}
+                </Typography>
+              </Stack>
+            </Paper>
 
             <TextField
               label="Teléfono del cliente"
@@ -1147,18 +1356,55 @@ export default function PosPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={successOpen} onClose={() => setSuccessOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Venta completada</DialogTitle>
+      <Dialog
+        open={successOpen}
+        onClose={() => setSuccessOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            border: "1px solid rgba(16, 185, 129, 0.14)",
+            background:
+              "radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+            pb: 2,
+          }}
+        >
+          <Stack spacing={0.35}>
+            <Typography variant="overline" sx={{ color: "#a7f3d0", fontWeight: 800, letterSpacing: "0.08em" }}>
+              Operación confirmada
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Venta completada
+            </Typography>
+          </Stack>
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={1.5} sx={{ pt: 1 }}>
             <Alert severity="success">La venta quedó confirmada correctamente.</Alert>
 
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography color="text.secondary">Cambio a entregar</Typography>
-              <Typography variant="h5" fontWeight={900}>
-                {currency(changeDue)}
-              </Typography>
-            </Stack>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+                background:
+                  "linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 78, 59, 0.14) 100%)",
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography color="text.secondary">Cambio a entregar</Typography>
+                <Typography variant="h5" fontWeight={900}>
+                  {currency(changeDue)}
+                </Typography>
+              </Stack>
+            </Paper>
 
             <Divider />
 
@@ -1172,7 +1418,17 @@ export default function PosPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSuccessOpen(false)} variant="contained">
+          <Button
+            onClick={() => setSuccessOpen(false)}
+            variant="contained"
+            sx={{
+              fontWeight: 800,
+              background: "linear-gradient(135deg, #15803d 0%, #16a34a 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #166534 0%, #15803d 100%)",
+              },
+            }}
+          >
             Cerrar
           </Button>
         </DialogActions>

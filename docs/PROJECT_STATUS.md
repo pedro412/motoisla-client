@@ -1,7 +1,7 @@
 # Project Status - MotoIsla Client
 
 ## Resumen ejecutivo
-- Estado general: **MVP integrado operativo en local** con checkout POS, apartados y detalle de ventas.
+- Estado general: **MVP integrado operativo en local** con checkout POS, apartados, gastos y reportes financieros.
 - Backend target: `motoisla-server` (`/api/v1`) con BFF en Next.
 
 ## Completado
@@ -18,7 +18,8 @@
 - Apartados:
   - `/apartados` con listado operativo y filtros.
   - `/apartados/[id]` con detalle, abonos, extensión y vencimiento.
-- Reportes admin (`/admin/reports`) con `/metrics` y `/reports/sales`.
+- Reportes (`/admin/reports`) con `/metrics` y `/reports/sales`, incluyendo utilidad bruta, utilidad neta tienda, participación de inversionistas e inventario separado por ownership económico.
+- Gastos (`/expenses`) con resumen mensual, plantillas fijas recurrentes, generación del mes y marcación de pago/cancelación.
 - Compras (`/purchases/imports`) con flujo parse local MYESA + preview editable + `preview-confirm` backend.
 - Cálculo de precio público con margen en tiempo real.
 - Productos (`/products`) con listado interno, filtros, detalle, edición, borrado y movimientos de inventario por producto.
@@ -32,6 +33,7 @@
 - Fortalecer validaciones POS por campo (`fields`) y UX de errores finos en modal de cobro.
 - Completar e2e de negocio (POS + apartados + compras con assertions de inventario).
 - Endurecer concurrencia/locking de compra de inversionistas para evitar carreras de asignación simultánea.
+- Refinar reportería financiera con comparativos entre periodos y drill-down por bucket.
 - Agregar vista de detalle de cliente con historial consolidado para preparar lealtad.
 - Definir/ajustar moneda y formatos finales de operación.
 - Endurecer observabilidad frontend (logging estructurado y captura de errores).
