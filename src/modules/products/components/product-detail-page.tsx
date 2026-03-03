@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Avatar, Box, Button, Chip, CircularProgress, Grid, Paper, Snackbar, Stack, Typography } from "@mui/material";
+import { Alert, Avatar, Button, Chip, CircularProgress, Grid, Paper, Snackbar, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";

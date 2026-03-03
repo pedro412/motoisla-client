@@ -24,7 +24,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
 import type {
@@ -221,16 +221,37 @@ function FixedExpenseTemplateDialog({
   onClose: () => void;
   onSubmit: (payload: FixedExpenseTemplatePayload, templateId?: string) => Promise<void>;
 }) {
-  const [form, setForm] = useState<FixedExpenseTemplatePayload>(emptyTemplateForm());
-  const [error, setError] = useState("");
+  const dialogKey = `${template?.id ?? "new"}-${open ? "open" : "closed"}`;
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setForm(template ? templateToForm(template) : emptyTemplateForm());
-    setError("");
-  }, [open, template]);
+  return (
+    <Dialog open={open} onClose={pending ? undefined : onClose} fullWidth maxWidth="sm">
+      {open ? (
+        <FixedExpenseTemplateDialogBody
+          key={dialogKey}
+          template={template}
+          pending={pending}
+          onClose={onClose}
+          onSubmit={onSubmit}
+        />
+      ) : null}
+    </Dialog>
+  );
+}
+
+function FixedExpenseTemplateDialogBody({
+  template,
+  pending,
+  onClose,
+  onSubmit,
+}: {
+  template: FixedExpenseTemplate | null;
+  pending: boolean;
+  onClose: () => void;
+  onSubmit: (payload: FixedExpenseTemplatePayload, templateId?: string) => Promise<void>;
+}) {
+  const initialForm = template ? templateToForm(template) : emptyTemplateForm();
+  const [form, setForm] = useState<FixedExpenseTemplatePayload>(initialForm);
+  const [error, setError] = useState("");
 
   async function handleSubmit() {
     try {
@@ -243,7 +264,7 @@ function FixedExpenseTemplateDialog({
   }
 
   return (
-    <Dialog open={open} onClose={pending ? undefined : onClose} fullWidth maxWidth="sm">
+    <>
       <DialogTitle sx={{ fontWeight: 800 }}>{template ? "Editar gasto fijo" : "Nuevo gasto fijo"}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
@@ -303,7 +324,7 @@ function FixedExpenseTemplateDialog({
           {pending ? "Guardando..." : template ? "Guardar cambios" : "Crear plantilla"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 }
 
