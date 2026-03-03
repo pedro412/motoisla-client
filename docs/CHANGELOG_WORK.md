@@ -1,5 +1,13 @@
 # Work Changelog
 
+## 2026-03-02 (UI polish + reglas de detalle)
+- Nuevo patrón reusable `DetailPageHeader` para vistas detalle con breadcrumb, botón de regreso y acción principal alineada.
+- Aplicado en detalles de `productos`, `ventas`, `apartados`, `inversionistas` y en edición de producto.
+- Refactor visual del módulo `Productos` para alinear tablas, cards y movimientos con el lenguaje dark/slate de `Reportes` y `Gastos`.
+- Refactor visual del flujo `Compras -> Registrar nueva compra` con bloques oscuros, cards más legibles y CTA más claros.
+- En compras, el campo antes etiquetado como “Venta” se corrigió a `Costo + IVA` y quedó calculado automáticamente.
+- El parser MYESA del cliente ahora soporta líneas de producto que no inician con `**`.
+
 ## 2026-03-02 (Gastos + Reportes financieros)
 - Nueva pantalla `/expenses` con selector mensual, KPIs operativos y administración de gastos pagados/pendientes.
 - Soporte de plantillas de gastos fijos, generación mensual explícita y marcación de pagos/cancelación desde UI.

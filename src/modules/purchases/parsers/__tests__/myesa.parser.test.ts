@@ -68,6 +68,27 @@ CLAVE PRODUCTO: 39121903 CLAVE PEDIMENTO: 25 16 1767 5003538
     expect(result[0].product_type_name).toBe("CASCOS ABATIBLES");
   });
 
+  it("parses invoice rows even when the sku row does not start with asterisks", () => {
+    const rawText = `
+6219-1001 12 H87 LIMPIADOR MOTUL M2 HELMET INTERIOR CLEAN DESINFECTANTE ATOMI
+CLAVE PRODUCTO: 12163800
+128.33 1,539.91
+`;
+
+    const result = parseMyesaInvoice(rawText, { knownBrands: ["MOTUL"] });
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      sku: "6219-1001",
+      qty: "12.00",
+      unit_cost: "128.33",
+      unit_price: "148.86",
+      public_price: "193.52",
+      brand_name: "MOTUL",
+      is_selected: true,
+      match_status: "NEW_PRODUCT",
+    });
+  });
+
   it("reconciles parsed lines with existing products by exact sku", () => {
     const parsed = parseMyesaInvoice(`
 ** 5124-1037 1 H87 CANDADO DISCO FRENO PROMOTO CON ALARMA CDA1 CROMO

@@ -4,7 +4,10 @@ import {
   Alert,
   Autocomplete,
   Avatar,
+  Box,
+  Chip,
   CircularProgress,
+  Divider,
   Grid,
   Paper,
   Snackbar,
@@ -18,6 +21,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -90,8 +94,16 @@ export function ProductsListPage() {
   const sortedProducts = useMemo(() => sortProductsForDisplay(productsQuery.data?.results ?? []), [productsQuery.data]);
   const totalProducts = productsQuery.data?.count ?? 0;
   const totalProductsWithStock = productsWithStockCountQuery.data?.count ?? 0;
+  const productsWithoutStock = Math.max(totalProducts - totalProductsWithStock, 0);
+  const inactiveProducts = sortedProducts.filter((product) => product.is_active === false).length;
   const brandOptions = brandsQuery.data?.results ?? [];
   const typeOptions = productTypesQuery.data?.results ?? [];
+
+  const tableHeaderCellSx = {
+    backgroundColor: "rgba(15, 23, 42, 0.38)",
+    borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
+    py: 1.5,
+  } as const;
 
   const errorMessage = useMemo(() => {
     if (!productsQuery.error) {
@@ -107,31 +119,149 @@ export function ProductsListPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Productos</Typography>
-      <Typography color="text.secondary">Consulta el inventario, filtra por nombre o SKU y entra al detalle de cada producto.</Typography>
+      <Paper
+        sx={{
+          p: { xs: 2.5, md: 3.5 },
+          borderRadius: 4,
+          color: "#e2e8f0",
+          background:
+            "linear-gradient(135deg, #0f172a 0%, #13213c 45%, #16324f 100%)",
+          border: "1px solid rgba(148, 163, 184, 0.18)",
+          boxShadow: "0 28px 60px rgba(15, 23, 42, 0.22)",
+        }}
+      >
+        <Stack spacing={2.5}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems={{ xs: "flex-start", md: "center" }}
+            justifyContent="space-between"
+          >
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ color: "rgba(191, 219, 254, 0.9)", letterSpacing: "0.18em", fontWeight: 800 }}
+              >
+                Inventario operativo
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
+                Productos
+              </Typography>
+              <Typography sx={{ color: "rgba(226, 232, 240, 0.78)", maxWidth: 760 }}>
+                Consulta el inventario, detecta productos sin stock y entra al detalle de cada producto con una vista más clara para operación diaria.
+              </Typography>
+            </Box>
 
-      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                label={`${totalProductsWithStock} con stock`}
+                sx={{
+                  fontWeight: 800,
+                  color: "#d1fae5",
+                  backgroundColor: "rgba(16, 185, 129, 0.16)",
+                  border: "1px solid rgba(16, 185, 129, 0.24)",
+                }}
+              />
+              <Chip
+                label={`${productsWithoutStock} sin stock`}
+                sx={{
+                  fontWeight: 800,
+                  color: "#fef3c7",
+                  backgroundColor: "rgba(245, 158, 11, 0.16)",
+                  border: "1px solid rgba(245, 158, 11, 0.22)",
+                }}
+              />
+              <Chip
+                label={`${inactiveProducts} inactivos`}
+                sx={{
+                  fontWeight: 800,
+                  color: "#e2e8f0",
+                  backgroundColor: "rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(148, 163, 184, 0.2)",
+                }}
+              />
+            </Stack>
+          </Stack>
 
-      <Paper sx={{ p: 2.5 }}>
-        <Stack spacing={2}>
           <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="overline" color="text.secondary">
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                }}
+              >
+                <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
                   Productos encontrados
                 </Typography>
-                <Typography variant="h5">{totalProducts}</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                  {totalProducts}
+                </Typography>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="overline" color="text.secondary">
-                  Productos con stock
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                }}
+              >
+                <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                  Disponibles
                 </Typography>
-                <Typography variant="h5">{productsWithStockCountQuery.isLoading ? "..." : totalProductsWithStock}</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                  {productsWithStockCountQuery.isLoading ? "..." : totalProductsWithStock}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                }}
+              >
+                <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                  Sin stock
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                  {productsWithStockCountQuery.isLoading ? "..." : productsWithoutStock}
+                </Typography>
               </Paper>
             </Grid>
           </Grid>
+        </Stack>
+      </Paper>
+
+      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+
+      <Paper
+        sx={{
+          p: { xs: 2, md: 2.5 },
+          borderRadius: 4,
+          border: "1px solid rgba(148, 163, 184, 0.18)",
+          background:
+            "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
+          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+        }}
+      >
+        <Stack spacing={2}>
+          <Stack spacing={0.5}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+              Explorador de productos
+            </Typography>
+            <Typography sx={{ color: "rgba(226, 232, 240, 0.76)" }}>
+              Filtra por nombre, SKU, marca o categoría. Haz clic en cualquier fila para entrar al detalle del producto.
+            </Typography>
+          </Stack>
+
+          <Divider sx={{ borderColor: "rgba(148, 163, 184, 0.16)" }} />
 
           <TextField
             label="Buscar producto"
@@ -139,6 +269,28 @@ export function ProductsListPage() {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Nombre o SKU"
             fullWidth
+            sx={{
+              "& .MuiInputLabel-root": {
+                color: "rgba(226, 232, 240, 0.72)",
+              },
+              "& .MuiInputLabel-root.Mui-focused": {
+                color: "#bfdbfe",
+              },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 3,
+                backgroundColor: "rgba(15, 23, 42, 0.36)",
+                color: "#f8fafc",
+                "& fieldset": {
+                  borderColor: "rgba(148, 163, 184, 0.18)",
+                },
+                "&:hover fieldset": {
+                  borderColor: "rgba(148, 163, 184, 0.28)",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "rgba(96, 165, 250, 0.52)",
+                },
+              },
+            }}
           />
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
@@ -153,7 +305,35 @@ export function ProductsListPage() {
               }}
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderInput={(params) => <TextField {...params} label="Filtrar por marca" placeholder="Todas" />}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Filtrar por marca"
+                  placeholder="Todas"
+                  sx={{
+                    "& .MuiInputLabel-root": {
+                      color: "rgba(226, 232, 240, 0.72)",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#bfdbfe",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      backgroundColor: "rgba(15, 23, 42, 0.36)",
+                      color: "#f8fafc",
+                      "& fieldset": {
+                        borderColor: "rgba(148, 163, 184, 0.18)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "rgba(148, 163, 184, 0.28)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "rgba(96, 165, 250, 0.52)",
+                      },
+                    },
+                  }}
+                />
+              )}
               fullWidth
             />
 
@@ -168,7 +348,35 @@ export function ProductsListPage() {
               }}
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderInput={(params) => <TextField {...params} label="Filtrar por tipo / categoria" placeholder="Todas" />}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Filtrar por tipo / categoria"
+                  placeholder="Todas"
+                  sx={{
+                    "& .MuiInputLabel-root": {
+                      color: "rgba(226, 232, 240, 0.72)",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#bfdbfe",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      backgroundColor: "rgba(15, 23, 42, 0.36)",
+                      color: "#f8fafc",
+                      "& fieldset": {
+                        borderColor: "rgba(148, 163, 184, 0.18)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "rgba(148, 163, 184, 0.28)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "rgba(96, 165, 250, 0.52)",
+                      },
+                    },
+                  }}
+                />
+              )}
               fullWidth
             />
           </Stack>
@@ -176,7 +384,7 @@ export function ProductsListPage() {
           {productsQuery.isLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">
               <CircularProgress size={20} />
-              <Typography color="text.secondary">Cargando productos...</Typography>
+              <Typography sx={{ color: "rgba(226, 232, 240, 0.72)" }}>Cargando productos...</Typography>
             </Stack>
           ) : null}
 
@@ -185,17 +393,63 @@ export function ProductsListPage() {
           ) : null}
 
           {sortedProducts.length > 0 ? (
-            <TableContainer>
-              <Table sx={{ minWidth: 760 }}>
+            <TableContainer
+              sx={{
+                borderRadius: 3,
+                border: "1px solid rgba(148, 163, 184, 0.16)",
+                overflowX: "auto",
+                background:
+                  "linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(30, 41, 59, 0.34) 100%)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <Table
+                sx={{
+                  minWidth: 760,
+                  backgroundColor: "transparent",
+                  "& .MuiTableCell-root": {
+                    backgroundColor: "transparent",
+                    color: "#e2e8f0",
+                  },
+                }}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableCell>Imagen</TableCell>
-                    <TableCell>SKU</TableCell>
-                    <TableCell>Nombre</TableCell>
-                    <TableCell>Stock</TableCell>
-                    <TableCell>Precio</TableCell>
-                    <TableCell>Actualizado</TableCell>
-                    <TableCell>Estatus</TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        Imagen
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        SKU
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        Nombre
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        Stock
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        Precio
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        Actualizado
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={tableHeaderCellSx}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        Estatus
+                      </Typography>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -204,19 +458,75 @@ export function ProductsListPage() {
                       key={product.id}
                       hover
                       onClick={() => router.push(`/products/${product.id}`)}
-                      sx={{ cursor: "pointer" }}
+                      sx={{
+                        cursor: "pointer",
+                        transition: "background-color 160ms ease, transform 160ms ease",
+                        "&:hover": {
+                          backgroundColor: alpha("#60a5fa", 0.08),
+                        },
+                        "& > .MuiTableCell-root": {
+                          borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+                          py: 1.6,
+                        },
+                      }}
                     >
                       <TableCell>
-                        <Avatar src={product.primary_image_url ?? undefined} alt={product.name}>
+                        <Avatar
+                          src={product.primary_image_url ?? undefined}
+                          alt={product.name}
+                          sx={{
+                            width: 44,
+                            height: 44,
+                            fontWeight: 900,
+                            bgcolor: alpha("#1d4ed8", 0.12),
+                            color: "#1d4ed8",
+                            border: "1px solid rgba(29, 78, 216, 0.18)",
+                          }}
+                        >
                           {product.name.slice(0, 1).toUpperCase()}
                         </Avatar>
                       </TableCell>
-                      <TableCell>{product.sku}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.stock}</TableCell>
-                      <TableCell>{formatCurrency(product.default_price)}</TableCell>
-                      <TableCell>{formatDateTime(product.updated_at)}</TableCell>
-                      <TableCell>{product.is_active === false ? "Inactivo" : "Activo"}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        <Typography sx={{ fontWeight: 800, color: "#f8fafc" }}>{product.sku}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 240 }}>
+                        <Typography sx={{ fontWeight: 800, color: "#f8fafc" }}>{product.name}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        <Chip
+                          label={`${product.stock}`}
+                          size="small"
+                          sx={{
+                            fontWeight: 800,
+                            color: Number(product.stock) > 0 ? "#dcfce7" : "#fef3c7",
+                            backgroundColor: Number(product.stock) > 0 ? "rgba(34, 197, 94, 0.14)" : "rgba(245, 158, 11, 0.14)",
+                            border: `1px solid ${
+                              Number(product.stock) > 0 ? "rgba(34, 197, 94, 0.18)" : "rgba(245, 158, 11, 0.2)"
+                            }`,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        <Typography sx={{ fontWeight: 900, color: "#f8fafc" }}>{formatCurrency(product.default_price)}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        <Typography sx={{ fontWeight: 700, color: "rgba(226, 232, 240, 0.8)" }}>{formatDateTime(product.updated_at)}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        <Chip
+                          label={product.is_active === false ? "Inactivo" : "Activo"}
+                          size="small"
+                          sx={{
+                            fontWeight: 800,
+                            color: product.is_active === false ? "#fecaca" : "#dbeafe",
+                            backgroundColor:
+                              product.is_active === false ? "rgba(239, 68, 68, 0.14)" : "rgba(37, 99, 235, 0.14)",
+                            border: `1px solid ${
+                              product.is_active === false ? "rgba(239, 68, 68, 0.18)" : "rgba(37, 99, 235, 0.18)"
+                            }`,
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

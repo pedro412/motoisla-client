@@ -19,6 +19,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -48,6 +49,37 @@ interface ProductPreviewCardProps {
   onCreateBrand: (lineId: string, name: string) => Promise<void>;
   onCreateProductType: (lineId: string, name: string) => Promise<void>;
 }
+
+const darkPanelSx = {
+  p: { xs: 2.5, md: 3 },
+  borderRadius: 4,
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  background: "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
+  boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+  "& .MuiInputLabel-root": {
+    color: "rgba(226, 232, 240, 0.72)",
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "#bfdbfe",
+  },
+  "& .MuiFormHelperText-root": {
+    color: "rgba(226, 232, 240, 0.56)",
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 3,
+    backgroundColor: "rgba(15, 23, 42, 0.36)",
+    color: "#f8fafc",
+    "& fieldset": {
+      borderColor: "rgba(148, 163, 184, 0.18)",
+    },
+    "&:hover fieldset": {
+      borderColor: "rgba(148, 163, 184, 0.28)",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "rgba(96, 165, 250, 0.52)",
+    },
+  },
+} as const;
 
 function parseAmount(value: string | null | undefined): number {
   if (!value) {
@@ -127,6 +159,12 @@ function displayOption(option: string): string {
 
 function toEditableLine(line: ReturnType<typeof parseMyesaInvoice>[number], index: number): EditableImportLine {
   const localId = `preview-${index + 1}-${line.sku || "no-sku"}`;
+  const derivedCostWithTax =
+    line.unit_cost !== null && line.unit_cost !== undefined
+      ? toMoney(Number(line.unit_cost) * (1 + IVA_RATE))
+      : line.unit_price !== null && line.unit_price !== undefined
+        ? String(line.unit_price)
+        : null;
   return {
     id: localId,
     line_no: index + 1,
@@ -140,7 +178,7 @@ function toEditableLine(line: ReturnType<typeof parseMyesaInvoice>[number], inde
     name: line.name,
     qty: line.qty,
     unit_cost: formatMaskedMoneyString(line.unit_cost),
-    unit_price: formatMaskedMoneyString(line.unit_price),
+    unit_price: formatMaskedMoneyString(derivedCostWithTax),
     public_price: formatMaskedMoneyString(line.public_price),
     brand_name: line.brand_name,
     product_type_name: line.product_type_name,
@@ -175,6 +213,13 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
   const updateDraft = useCallback((patch: Partial<EditableImportLine>) => {
     setDraft((current) => {
       const nextDraft = { ...current, ...patch };
+      if (patch.unit_cost !== undefined) {
+        const unitCost = parseAmount(String(patch.unit_cost));
+        nextDraft.unit_price = unitCost > 0 ? formatMaskedMoney(unitCost * (1 + IVA_RATE)) : null;
+        if (!current.publicPriceTouched) {
+          nextDraft.public_price = formatMaskedMoney(defaultPublicPrice(unitCost));
+        }
+      }
       if (patch.unit_cost !== undefined && !current.publicPriceTouched) {
         const unitCost = parseAmount(String(patch.unit_cost));
         nextDraft.public_price = formatMaskedMoney(defaultPublicPrice(unitCost));
@@ -193,11 +238,48 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
     [line.id, onLineChange],
   );
 
+  const costWithTax = rowCostWithTax(draft);
+  const rowTotal = parseAmount(draft.qty) * parseAmount(draft.unit_cost);
+
   return (
-    <Card variant="outlined">
-      <CardContent>
+    <Card
+      variant="outlined"
+      sx={{
+        borderRadius: 3.5,
+        borderColor: draft.is_selected ? "rgba(96, 165, 250, 0.28)" : "rgba(148, 163, 184, 0.14)",
+        background:
+          draft.is_selected
+            ? "linear-gradient(180deg, rgba(15, 23, 42, 0.68) 0%, rgba(30, 41, 59, 0.6) 100%)"
+            : "linear-gradient(180deg, rgba(15, 23, 42, 0.52) 0%, rgba(30, 41, 59, 0.48) 100%)",
+        boxShadow: draft.is_selected ? "0 18px 40px rgba(15, 23, 42, 0.18)" : "none",
+        "& .MuiInputLabel-root": {
+          color: "rgba(226, 232, 240, 0.72)",
+        },
+        "& .MuiInputLabel-root.Mui-focused": {
+          color: "#bfdbfe",
+        },
+        "& .MuiFormHelperText-root": {
+          color: "rgba(226, 232, 240, 0.56)",
+        },
+        "& .MuiOutlinedInput-root": {
+          borderRadius: 2.5,
+          backgroundColor: "rgba(15, 23, 42, 0.3)",
+          color: "#f8fafc",
+          "& fieldset": {
+            borderColor: "rgba(148, 163, 184, 0.16)",
+          },
+          "&:hover fieldset": {
+            borderColor: "rgba(148, 163, 184, 0.26)",
+          },
+          "&.Mui-focused fieldset": {
+            borderColor: "rgba(96, 165, 250, 0.52)",
+          },
+        },
+      }}
+    >
+      <CardContent sx={{ p: 2.25 }}>
         <Stack spacing={2}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }} justifyContent="space-between">
             <Stack direction="row" alignItems="center" spacing={1}>
               <Checkbox
                 checked={draft.is_selected}
@@ -205,18 +287,60 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                   updateDraft({ is_selected: event.target.checked });
                   commitDraft({ is_selected: event.target.checked });
                 }}
+                sx={{ color: "rgba(191, 219, 254, 0.75)" }}
               />
-              <Typography variant="subtitle2">Sel</Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#e2e8f0" }}>
+                Línea {draft.line_no}
+              </Typography>
             </Stack>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                size="small"
+                label={draft.is_selected ? "Incluida" : "Omitida"}
+                sx={{
+                  fontWeight: 800,
+                  color: draft.is_selected ? "#dbeafe" : "#e2e8f0",
+                  backgroundColor: draft.is_selected ? "rgba(37, 99, 235, 0.14)" : "rgba(148, 163, 184, 0.14)",
+                  border: `1px solid ${draft.is_selected ? "rgba(37, 99, 235, 0.22)" : "rgba(148, 163, 184, 0.16)"}`,
+                }}
+              />
+              <Chip
+                size="small"
+                label={draft.match_status}
+                sx={{
+                  fontWeight: 800,
+                  color: "#f8fafc",
+                  backgroundColor: "rgba(15, 23, 42, 0.34)",
+                  border: "1px solid rgba(148, 163, 184, 0.16)",
+                }}
+              />
+            </Stack>
+          </Stack>
+
+          <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }}>
             <TextField
               size="small"
               label="SKU"
               value={draft.sku}
               onChange={(event) => updateDraft({ sku: event.target.value })}
               onBlur={() => commitDraft({ sku: draft.sku })}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 220 }}
             />
-            <Chip size="small" label={draft.match_status} />
+            <Box
+              sx={{
+                px: 1.5,
+                py: 1,
+                borderRadius: 2.5,
+                backgroundColor: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(148, 163, 184, 0.12)",
+                minWidth: { xs: "100%", md: 240 },
+              }}
+            >
+              <Typography variant="caption" sx={{ color: "rgba(191, 219, 254, 0.78)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Importe de línea
+              </Typography>
+              <Typography sx={{ color: "#f8fafc", fontWeight: 900 }}>{formatMoney(rowTotal)}</Typography>
+            </Box>
           </Stack>
 
           <TextField
@@ -248,7 +372,11 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                 onChange={(event) => updateDraft({ unit_cost: event.target.value })}
                 onBlur={() => {
                   const unitCost = formatMaskedMoneyString(draft.unit_cost);
-                  const patch: Partial<EditableImportLine> = { unit_cost: unitCost };
+                  const normalizedCost = parseAmount(unitCost ?? "");
+                  const patch: Partial<EditableImportLine> = {
+                    unit_cost: unitCost,
+                    unit_price: unitCost ? formatMaskedMoney(normalizedCost * (1 + IVA_RATE)) : null,
+                  };
                   if (!draft.publicPriceTouched) {
                     patch.public_price = unitCost ? formatMaskedMoney(defaultPublicPrice(parseAmount(unitCost))) : null;
                   }
@@ -261,15 +389,15 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
             <Grid size={{ xs: 12, md: 2 }}>
               <TextField
                 size="small"
-                label="Venta"
-                value={draft.unit_price ?? ""}
-                onChange={(event) => updateDraft({ unit_price: event.target.value })}
-                onBlur={() => {
-                  const unitPrice = formatMaskedMoneyString(draft.unit_price);
-                  updateDraft({ unit_price: unitPrice });
-                  commitDraft({ unit_price: unitPrice });
-                }}
+                label="Costo + IVA"
+                value={draft.unit_cost ? formatMaskedMoney(costWithTax) : ""}
+                helperText="Calculado automáticamente"
                 fullWidth
+                slotProps={{
+                  input: {
+                    readOnly: true,
+                  },
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 2 }}>
@@ -287,9 +415,20 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                <Typography variant="caption">Margen: {formatMoney(rowMarkupAmount(draft))}</Typography>
-                <Typography variant="caption" color="text.secondary">
+              <Stack
+                spacing={0.5}
+                sx={{
+                  mt: 0.5,
+                  p: 1.25,
+                  borderRadius: 2.5,
+                  backgroundColor: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(148, 163, 184, 0.12)",
+                }}
+              >
+                <Typography variant="caption" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+                  Margen proyectado: {formatMoney(rowMarkupAmount(draft))}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "rgba(191, 219, 254, 0.72)" }}>
                   {rowMarkupPercent(draft).toFixed(2)}%
                 </Typography>
               </Stack>
@@ -368,7 +507,7 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
             </Grid>
           </Grid>
 
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: "rgba(226, 232, 240, 0.58)" }}>
             Imagen: Próximamente
           </Typography>
         </Stack>
@@ -524,6 +663,10 @@ export default function PurchasesImportsPage() {
           const unitCost = parseAmount(String(patch.unit_cost));
           nextLine.public_price = formatMaskedMoney(defaultPublicPrice(unitCost));
         }
+        if (patch.unit_cost !== undefined) {
+          const unitCost = parseAmount(String(patch.unit_cost));
+          nextLine.unit_price = unitCost > 0 ? formatMaskedMoney(unitCost * (1 + IVA_RATE)) : null;
+        }
         if (patch.public_price !== undefined) {
           nextLine.publicPriceTouched = true;
         }
@@ -627,16 +770,117 @@ export default function PurchasesImportsPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Compras (Importación factura)</Typography>
-      <Typography color="text.secondary">
-        Flujo: parse local inmediato - cards editables - confirmación segura en backend.
-      </Typography>
+      <Paper
+        sx={{
+          p: { xs: 2.5, md: 3.5 },
+          borderRadius: 4,
+          color: "#e2e8f0",
+          background: "linear-gradient(135deg, #0f172a 0%, #13213c 45%, #16324f 100%)",
+          border: "1px solid rgba(148, 163, 184, 0.18)",
+          boxShadow: "0 28px 60px rgba(15, 23, 42, 0.22)",
+        }}
+      >
+        <Stack spacing={2.5}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems={{ md: "center" }}>
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ color: "rgba(191, 219, 254, 0.9)", letterSpacing: "0.18em", fontWeight: 800 }}
+              >
+                Compras operativas
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
+                Registrar nueva compra
+              </Typography>
+              <Typography sx={{ color: "rgba(226, 232, 240, 0.76)" }}>
+                Flujo: parse local inmediato, edición por producto y confirmación segura en backend.
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                label={`${selectedItemsCount} artículos`}
+                sx={{
+                  fontWeight: 800,
+                  color: "#dbeafe",
+                  backgroundColor: "rgba(37, 99, 235, 0.14)",
+                  border: "1px solid rgba(37, 99, 235, 0.2)",
+                }}
+              />
+              <Chip
+                label={`${selectedPiecesCount.toFixed(2)} piezas`}
+                sx={{
+                  fontWeight: 800,
+                  color: "#d1fae5",
+                  backgroundColor: "rgba(16, 185, 129, 0.14)",
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                }}
+              />
+            </Stack>
+          </Stack>
+
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                }}
+              >
+                <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                  Subtotal
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                  {formatMoney(computedSubtotal)}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                }}
+              >
+                <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                  IVA calculado
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                  {formatMoney(parseAmount(tax || toMoney(computedTax)))}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                }}
+              >
+                <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                  Total estimado
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                  {formatMoney(parseAmount(total || toMoney(computedTotal)))}
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Stack>
+      </Paper>
 
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-      <Paper sx={{ p: 2.5 }}>
+      <Paper sx={darkPanelSx}>
         <Stack spacing={2}>
-          <Typography variant="h6">Encabezado</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+            Encabezado
+          </Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
             <TextField
               select
@@ -712,9 +956,11 @@ export default function PurchasesImportsPage() {
         </Alert>
       </Snackbar>
 
-      <Paper sx={{ p: 2.5 }}>
+      <Paper sx={darkPanelSx}>
         <Stack spacing={1.5}>
-          <Typography variant="h6">Texto factura</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+            Texto factura
+          </Typography>
           <TextField
             multiline
             minRows={8}
@@ -723,16 +969,34 @@ export default function PurchasesImportsPage() {
             onChange={(event) => setRawText(event.target.value)}
             fullWidth
           />
-          <Button variant="contained" onClick={handleParse} disabled={working}>
+          <Button
+            variant="contained"
+            onClick={handleParse}
+            disabled={working}
+            sx={{
+              alignSelf: "flex-start",
+              minHeight: 46,
+              px: 2.5,
+              fontWeight: 800,
+              borderRadius: 2.5,
+            }}
+          >
             {working ? <CircularProgress color="inherit" size={20} /> : "Parsear factura"}
           </Button>
         </Stack>
       </Paper>
 
-      <Paper sx={{ p: 2.5 }}>
+      <Paper sx={darkPanelSx}>
         <Stack spacing={2}>
           <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1.5}>
-            <Typography variant="h6">Preview por producto</Typography>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+                Preview por producto
+              </Typography>
+              <Typography sx={{ color: "rgba(226, 232, 240, 0.72)" }}>
+                Cada card representa una línea parseada y editable antes de confirmar la compra.
+              </Typography>
+            </Box>
             <TextField
               size="small"
               label="Filtrar por SKU/Descripción"
@@ -758,17 +1022,36 @@ export default function PurchasesImportsPage() {
             />
           ))}
 
-          <Divider />
-          <Box>
-            <Typography>Total artículos seleccionados: {selectedItemsCount}</Typography>
-            <Typography>Total piezas seleccionadas: {selectedPiecesCount.toFixed(2)}</Typography>
-            <Typography>Subtotal líneas seleccionadas: {formatMoney(computedSubtotal)}</Typography>
-            <Typography>IVA (16%): {formatMoney(parseAmount(tax || toMoney(computedTax)))}</Typography>
-            <Typography variant="h6">Total: {formatMoney(parseAmount(total || toMoney(computedTotal)))}</Typography>
+          <Divider sx={{ borderColor: "rgba(148, 163, 184, 0.16)" }} />
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(148, 163, 184, 0.12)",
+            }}
+          >
+            <Typography sx={{ color: "#e2e8f0" }}>Total artículos seleccionados: {selectedItemsCount}</Typography>
+            <Typography sx={{ color: "#e2e8f0" }}>Total piezas seleccionadas: {selectedPiecesCount.toFixed(2)}</Typography>
+            <Typography sx={{ color: "#e2e8f0" }}>Subtotal líneas seleccionadas: {formatMoney(computedSubtotal)}</Typography>
+            <Typography sx={{ color: "#e2e8f0" }}>IVA (16%): {formatMoney(parseAmount(tax || toMoney(computedTax)))}</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+              Total: {formatMoney(parseAmount(total || toMoney(computedTotal)))}
+            </Typography>
           </Box>
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
-            <Button variant="contained" onClick={confirmBatch} disabled={!lines.length || working}>
+            <Button
+              variant="contained"
+              onClick={confirmBatch}
+              disabled={!lines.length || working}
+              sx={{
+                minHeight: 46,
+                px: 2.5,
+                fontWeight: 800,
+                borderRadius: 2.5,
+              }}
+            >
               {working ? <CircularProgress color="inherit" size={20} /> : "Confirmar compra"}
             </Button>
           </Stack>

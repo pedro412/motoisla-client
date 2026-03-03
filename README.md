@@ -57,9 +57,12 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - Módulo de apartados con listado, detalle, abonos, extensión y vencimiento.
 - Historial de ventas con detalle por venta.
 - Compras por importación con parse local (`MYESA`), preview en cards y confirmación backend transaccional (`preview-confirm`).
+- Parser MYESA en cliente ya soporta filas de producto con o sin prefijo `**`, manteniendo cálculo de `Costo + IVA` en preview.
 - Captura de `marca` y `tipo de producto` por línea con sugerencia automática + creación inline de taxonomy.
 - Cálculo de `precio_publico` y margen en tiempo real por línea.
 - Módulo privado de `Productos` con listado, filtros por marca/tipo, detalle, edición, borrado y tabla de movimientos.
+- Regla visual nueva para vistas de detalle: `breadcrumb` arriba, botón `Volver` a la izquierda y acción principal a la derecha.
+- Regla visual nueva para vistas operativas: superficies dark/slate, headers con jerarquía alta y tablas sin bloques blancos planos.
 
 ### En curso / pendiente
 - Mejorar validaciones y UX de errores en POS.
