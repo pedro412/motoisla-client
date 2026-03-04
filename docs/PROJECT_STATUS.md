@@ -30,6 +30,7 @@
   - smoke e2e (Playwright)
 
 ## Pendiente prioritario
+- Implementar cálculo de costo operativo en tiempo real por venta y reparto neto a inversionistas (documentado en `BACKLOG_PROFITABILITY_ENGINE_V1`).
 - Fortalecer validaciones POS por campo (`fields`) y UX de errores finos en modal de cobro.
 - Completar e2e de negocio (POS + apartados + compras con assertions de inventario).
 - Endurecer concurrencia/locking de compra de inversionistas para evitar carreras de asignación simultánea.
@@ -39,5 +40,6 @@
 - Endurecer observabilidad frontend (logging estructurado y captura de errores).
 
 ## Riesgos abiertos
+- Sin motor de neto por venta, existe riesgo de payout a inversionistas superior a utilidad real.
 - Dependencia de datos/usuarios locales para validar flujos de negocio avanzados.
 - Cobertura e2e actual es smoke; falta cobertura funcional profunda.

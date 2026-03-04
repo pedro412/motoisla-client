@@ -307,11 +307,12 @@ export function InvestorDetailPage() {
   });
 
   const investor = investorQuery.data;
-  const assignments = assignmentsQuery.data?.results ?? [];
   const ledgerEntries = ledgerQuery.data?.results ?? [];
   const sortedAssignments = useMemo(
-    () =>
-      [...assignments].sort((left, right) => {
+    () => {
+      const assignments = assignmentsQuery.data?.results ?? [];
+
+      return [...assignments].sort((left, right) => {
         const leftInStock = hasAvailableStock(left) ? 1 : 0;
         const rightInStock = hasAvailableStock(right) ? 1 : 0;
 
@@ -320,8 +321,9 @@ export function InvestorDetailPage() {
         }
 
         return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
-      }),
-    [assignments],
+      });
+    },
+    [assignmentsQuery.data?.results],
   );
   const capitalAvailable = Number(investor?.balances.capital ?? 0);
   const purchaseTotal = purchaseLines.reduce((total, line) => total + Number(calculateLineTotal(line.qty, calculateGross(line.unitCostNet, taxRatePct))), 0);

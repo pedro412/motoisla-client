@@ -24,7 +24,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
 import type {
@@ -221,16 +221,10 @@ function FixedExpenseTemplateDialog({
   onClose: () => void;
   onSubmit: (payload: FixedExpenseTemplatePayload, templateId?: string) => Promise<void>;
 }) {
-  const [form, setForm] = useState<FixedExpenseTemplatePayload>(emptyTemplateForm());
+  const [form, setForm] = useState<FixedExpenseTemplatePayload>(() =>
+    template ? templateToForm(template) : emptyTemplateForm(),
+  );
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setForm(template ? templateToForm(template) : emptyTemplateForm());
-    setError("");
-  }, [open, template]);
 
   async function handleSubmit() {
     try {
@@ -980,6 +974,7 @@ export default function ExpensesPage() {
       </Grid>
 
       <FixedExpenseTemplateDialog
+        key={`${templateDialogOpen ? "open" : "closed"}-${editingTemplate?.id ?? "new"}`}
         open={templateDialogOpen}
         template={editingTemplate}
         pending={createTemplateMutation.isPending || updateTemplateMutation.isPending}

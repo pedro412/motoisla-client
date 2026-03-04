@@ -79,7 +79,7 @@ export default function LayawayDetailPage() {
     staleTime: 60_000,
   });
 
-  const cardPlans = cardPlansQuery.data?.results ?? [];
+  const cardPlans = useMemo(() => cardPlansQuery.data?.results ?? [], [cardPlansQuery.data?.results]);
   const selectedCardPlan = useMemo(
     () => cardPlans.find((plan) => plan.id === selectedCardPlanId) ?? cardPlans[0] ?? null,
     [cardPlans, selectedCardPlanId],

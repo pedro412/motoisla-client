@@ -5,6 +5,7 @@ Este directorio centraliza el estado del frontend cliente y su integración con 
 ## Archivos
 - `docs/PROJECT_STATUS.md`: estado actual, hitos completados y riesgos abiertos.
 - `docs/NEXT_STEPS.md`: backlog priorizado con tareas ejecutables.
+- `docs/BACKLOG_PROFITABILITY_ENGINE_V1.md`: especificación funcional/técnica del motor de rentabilidad en tiempo real y reparto neto.
 - `docs/CHANGELOG_WORK.md`: bitácora resumida de cambios implementados.
 - `docs/QA_CHECKLIST.md`: checklist operativo de validación local.
 
