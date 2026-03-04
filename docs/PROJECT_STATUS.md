@@ -21,9 +21,15 @@
 - Reportes (`/admin/reports`) con `/metrics` y `/reports/sales`, incluyendo utilidad bruta, utilidad neta tienda, participación de inversionistas e inventario separado por ownership económico.
 - Gastos (`/expenses`) con resumen mensual, plantillas fijas recurrentes, generación del mes y marcación de pago/cancelación.
 - Compras (`/purchases/imports`) con flujo parse local MYESA + preview editable + `preview-confirm` backend.
+- El parser MYESA del cliente ya acepta formatos con y sin prefijo `**` en la línea de SKU.
+- En compras, el campo intermedio se presenta como `Costo + IVA` (no como “venta”) para reflejar la semántica real del import.
 - Cálculo de precio público con margen en tiempo real.
 - Productos (`/products`) con listado interno, filtros, detalle, edición, borrado y movimientos de inventario por producto.
 - Inversionistas (`/investors`) con listado admin, alta operativa con capital inicial opcional, detalle, compra de productos, depósito/retiro y visualización de ledger.
+- Convención UI nueva aplicada en vistas de detalle (`productos`, `ventas`, `apartados`, `inversionistas`):
+  - breadcrumb superior
+  - botón de regreso a la izquierda
+  - acción principal a la derecha
 - UI shell privado con navegación por rol y logout real.
 - Tests base:
   - unit/integration (Vitest)

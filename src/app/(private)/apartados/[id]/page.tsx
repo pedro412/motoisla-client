@@ -27,6 +27,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
+import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { layawayService } from "@/modules/layaway/services/layaway.service";
 import { salesService } from "@/modules/sales/services/sales.service";
@@ -210,7 +211,15 @@ export default function LayawayDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Detalle de apartado</Typography>
+      <DetailPageHeader
+        breadcrumbs={[
+          { label: "Apartados", href: "/apartados" },
+          { label: "Detalle de apartado" },
+        ]}
+        backHref="/apartados"
+        title="Detalle de apartado"
+        description="Consulta saldos, vigencia y movimientos de este apartado."
+      />
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
       <Paper sx={{ p: 3, borderRadius: 3 }}>

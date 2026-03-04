@@ -1,11 +1,13 @@
 "use client";
 
-import { Alert, Avatar, Button, Chip, CircularProgress, Paper, Snackbar, Stack, Typography } from "@mui/material";
+import { Alert, Avatar, Button, Chip, CircularProgress, Grid, Paper, Snackbar, Stack, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { ApiError } from "@/lib/api/errors";
 import { ProductMovementsTable } from "@/modules/products/components/product-movements-table";
 import { productsService } from "@/modules/products/services/products.service";
@@ -78,74 +80,200 @@ export function ProductDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} justifyContent="space-between">
-        <div>
-          <Typography variant="h4">{product.name}</Typography>
-          <Typography color="text.secondary">Detalle del producto</Typography>
-        </div>
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" onClick={() => router.push("/products")}>
-            Volver
-          </Button>
-          {isAdmin ? (
-            <Button component={Link} href={`/products/${product.id}/edit`} variant="contained">
+      <DetailPageHeader
+        breadcrumbs={[
+          { label: "Productos", href: "/products" },
+          { label: product.name },
+        ]}
+        backHref="/products"
+        title={product.name}
+        description="Revisa precios, rentabilidad y trazabilidad de inventario desde una sola vista."
+        action={
+          isAdmin ? (
+            <Button
+              component={Link}
+              href={`/products/${product.id}/edit`}
+              variant="contained"
+              sx={{
+                backgroundColor: "#2563eb",
+                "&:hover": {
+                  backgroundColor: "#1d4ed8",
+                },
+              }}
+            >
               Editar
             </Button>
-          ) : null}
-        </Stack>
-      </Stack>
+          ) : null
+        }
+      >
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+              }}
+            >
+              <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                Stock
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                {product.stock}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+              }}
+            >
+              <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                Precio público
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {formatCurrency(product.default_price)}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+              }}
+            >
+              <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                Utilidad
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {profitMetrics.profitAmount === null ? "-" : formatCurrency(profitMetrics.profitAmount)}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+              }}
+            >
+              <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                Margen %
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {profitMetrics.profitPercentage === null ? "-" : `${profitMetrics.profitPercentage.toFixed(2)}%`}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </DetailPageHeader>
 
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-      <Paper sx={{ p: 2.5 }}>
+      <Paper
+        sx={{
+          p: { xs: 2.5, md: 3 },
+          borderRadius: 4,
+          border: "1px solid rgba(148, 163, 184, 0.18)",
+          background: "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
+          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+        }}
+      >
         <Stack spacing={2.5}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "flex-start", md: "center" }}>
-            <Avatar src={product.primary_image_url ?? undefined} alt={product.name} sx={{ width: 88, height: 88 }}>
+            <Avatar
+              src={product.primary_image_url ?? undefined}
+              alt={product.name}
+              sx={{
+                width: 92,
+                height: 92,
+                fontWeight: 900,
+                bgcolor: alpha("#1d4ed8", 0.14),
+                color: "#bfdbfe",
+                border: "1px solid rgba(96, 165, 250, 0.2)",
+              }}
+            >
               {product.name.slice(0, 1).toUpperCase()}
             </Avatar>
-            <Stack spacing={0.5}>
-              <Typography variant="h6">{product.name}</Typography>
-              <Typography color="text.secondary">SKU: {product.sku}</Typography>
-              <Typography>Marca: {product.brand_name || "-"}</Typography>
-              <Typography>Categoria: {product.product_type_name || "-"}</Typography>
-              <Typography>Stock: {product.stock}</Typography>
-              <Typography>
-                Precio compra + IVA 16%: {profitMetrics.costPriceWithTax === null ? "-" : formatCurrency(profitMetrics.costPriceWithTax)}
+            <Stack spacing={0.8}>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+                {product.name}
               </Typography>
-              <Typography>Precio venta público: {formatCurrency(product.default_price)}</Typography>
-              <Typography>Utilidad en pesos: {profitMetrics.profitAmount === null ? "-" : formatCurrency(profitMetrics.profitAmount)}</Typography>
-              <Typography>
-                Utilidad %: {profitMetrics.profitPercentage === null ? "-" : `${profitMetrics.profitPercentage.toFixed(2)}%`}
+              <Typography sx={{ color: "rgba(226, 232, 240, 0.76)" }}>SKU: {product.sku}</Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>Marca: {product.brand_name || "-"}</Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>Categoria: {product.product_type_name || "-"}</Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>
+                Precio compra + IVA 16%: {profitMetrics.costPriceWithTax === null ? "-" : formatCurrency(profitMetrics.costPriceWithTax)}
               </Typography>
               <Chip
                 label={product.is_active === false ? "Inactivo" : "Activo"}
                 size="small"
-                color={product.is_active === false ? "default" : "success"}
-                sx={{ width: "fit-content" }}
+                sx={{
+                  width: "fit-content",
+                  fontWeight: 800,
+                  color: product.is_active === false ? "#fecaca" : "#dcfce7",
+                  backgroundColor:
+                    product.is_active === false ? "rgba(239, 68, 68, 0.14)" : "rgba(34, 197, 94, 0.14)",
+                  border: `1px solid ${
+                    product.is_active === false ? "rgba(239, 68, 68, 0.2)" : "rgba(34, 197, 94, 0.18)"
+                  }`,
+                }}
               />
             </Stack>
           </Stack>
 
           {additionalPriceKeys.length > 0 ? (
-            <Stack spacing={0.5}>
-              <Typography variant="subtitle2">Precios adicionales</Typography>
-              {additionalPriceKeys.map((key) => (
-                <Typography key={key}>
-                  {humanizeFieldName(key)}: {formatCurrency(product[key] as string | null)}
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+              }}
+            >
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+                  Precios adicionales
                 </Typography>
-              ))}
-            </Stack>
+                {additionalPriceKeys.map((key) => (
+                  <Typography key={key} sx={{ color: "#e2e8f0" }}>
+                    {humanizeFieldName(key)}: {formatCurrency(product[key] as string | null)}
+                  </Typography>
+                ))}
+              </Stack>
+            </Paper>
           ) : null}
 
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Metadatos</Typography>
-            <Typography>ID: {product.id}</Typography>
-            <Typography>Creado: {formatDateTime(product.created_at)}</Typography>
-            <Typography>Actualizado: {formatDateTime(product.updated_at)}</Typography>
-            <Typography>
-              Imagen principal: {product.primary_image_url ? product.primary_image_url : "No disponible"}
-            </Typography>
-          </Stack>
+          <Paper
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(148, 163, 184, 0.14)",
+            }}
+          >
+            <Stack spacing={0.75}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#f8fafc" }}>
+                Metadatos
+              </Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>ID: {product.id}</Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>Creado: {formatDateTime(product.created_at)}</Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>Actualizado: {formatDateTime(product.updated_at)}</Typography>
+              <Typography sx={{ color: "#e2e8f0" }}>
+                Imagen principal: {product.primary_image_url ? product.primary_image_url : "No disponible"}
+              </Typography>
+            </Stack>
+          </Paper>
         </Stack>
       </Paper>
 

@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
+import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { salesService } from "@/modules/sales/services/sales.service";
 import type { SalePaymentInput, SaleResponse } from "@/lib/types/sales";
 
@@ -87,7 +88,15 @@ export default function SaleDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Detalle de venta</Typography>
+      <DetailPageHeader
+        breadcrumbs={[
+          { label: "Ventas", href: "/ventas" },
+          { label: "Detalle de venta" },
+        ]}
+        backHref="/ventas"
+        title="Detalle de venta"
+        description="Revisa líneas, pagos y trazabilidad comercial de esta operación."
+      />
 
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Stack spacing={2}>

@@ -20,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { ApiError } from "@/lib/api/errors";
 import type { ProductDetail, ProductUpdatePayload } from "@/lib/types/products";
@@ -219,15 +220,26 @@ function ProductEditFormContent({ product }: ProductEditFormContentProps) {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} justifyContent="space-between">
-        <div>
-          <Typography variant="h4">Editar producto</Typography>
-          <Typography color="text.secondary">Actualiza datos de inventario y precios.</Typography>
-        </div>
-        <Button variant="outlined" onClick={() => router.push(`/products/${product.id}`)}>
-          Cancelar
-        </Button>
-      </Stack>
+      <DetailPageHeader
+        breadcrumbs={[
+          { label: "Productos", href: "/products" },
+          { label: product.name, href: `/products/${product.id}` },
+          { label: "Editar" },
+        ]}
+        backHref={`/products/${product.id}`}
+        backLabel="Volver al detalle"
+        title="Editar producto"
+        description="Actualiza datos de inventario, precios y metadatos del producto."
+        action={
+          <Button
+            variant="outlined"
+            onClick={() => router.push(`/products/${product.id}`)}
+            sx={{ borderColor: "rgba(148, 163, 184, 0.22)", color: "#e2e8f0" }}
+          >
+            Cancelar
+          </Button>
+        }
+      />
 
       {generalError ? <Alert severity="error">{generalError}</Alert> : null}
 

@@ -67,7 +67,7 @@ interface ParseMyesaInvoiceOptions {
   knownBrands?: string[];
 }
 
-const ITEM_HEADER_REGEX = /^\*+\s+([A-Z0-9-]+)\s+(\d+(?:\.\d+)?)\s+\S+\s+(.+)$/i;
+const ITEM_HEADER_REGEX = /^(?:\*+\s+)?([A-Z0-9-]+)\s+(\d+(?:\.\d+)?)\s+\S+\s+(.+)$/i;
 const AMOUNTS_REGEX = /^\s*([\d,]+(?:\.\d{1,2})?)\s+([\d,]+(?:\.\d{1,2})?)\s*$/;
 
 const IGNORE_LINE_PATTERNS = [/^NO\.COM\s+/i, /CFDI/i, /CLAVE\s+PRODUCTO/i, /CLAVE\s+PEDIMENTO/i];

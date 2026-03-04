@@ -27,7 +27,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { PageHeader } from "@/components/common/page-header";
+import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { ApiError } from "@/lib/api/errors";
 import type { InvestorAssignmentItem, InvestorLedgerEntry, InvestorLedgerEntryType } from "@/lib/types/investors";
@@ -311,7 +311,6 @@ export function InvestorDetailPage() {
   const sortedAssignments = useMemo(
     () => {
       const assignments = assignmentsQuery.data?.results ?? [];
-
       return [...assignments].sort((left, right) => {
         const leftInStock = hasAvailableStock(left) ? 1 : 0;
         const rightInStock = hasAvailableStock(right) ? 1 : 0;
@@ -480,7 +479,20 @@ export function InvestorDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title={investor.display_name} description="Consulta su capital, asigna productos y registra movimientos de entrada o salida." />
+      <DetailPageHeader
+        breadcrumbs={[
+          { label: "Inversionistas", href: "/investors" },
+          { label: investor.display_name },
+        ]}
+        backHref="/investors"
+        title={investor.display_name}
+        description="Consulta su capital, asigna productos y registra movimientos de entrada o salida."
+        action={
+          <Button variant="contained" onClick={() => setPurchaseOpen(true)}>
+            Comprar productos
+          </Button>
+        }
+      />
 
       {baseError ? <Alert severity="error">{baseError}</Alert> : null}
 
@@ -512,9 +524,6 @@ export function InvestorDetailPage() {
       </Box>
 
       <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-        <Button variant="contained" onClick={() => setPurchaseOpen(true)}>
-          Comprar productos
-        </Button>
         <Button variant="outlined" onClick={() => setCapitalMode("deposit")}>
           Agregar capital
         </Button>

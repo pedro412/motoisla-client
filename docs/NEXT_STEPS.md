@@ -22,6 +22,7 @@
 1. Error boundary global y estrategia de logging frontend.
 2. Skeletons y estados vacíos compartidos para todas las vistas.
 3. Mejorar telemetría de errores para debugging en local/staging.
+4. Extender el patrón `DetailPageHeader` al resto de vistas de detalle que aún no lo usan (`purchase receipts`, futuras vistas de cliente).
 
 ## P4 - Backlog funcional (fuera de sprint)
 1. Reinversión y filtros avanzados dentro de `investors`.
