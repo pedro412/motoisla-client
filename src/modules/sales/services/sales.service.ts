@@ -1,6 +1,15 @@
 import { httpClient } from "@/lib/api/http-client";
 import type { PaginatedResponse } from "@/lib/types/api";
-import type { CardCommissionPlan, ProductSearchItem, SaleCreatePayload, SaleHistoryItem, SaleResponse } from "@/lib/types/sales";
+import type {
+  CardCommissionPlan,
+  OperatingCostRateResponse,
+  ProductSearchItem,
+  SaleCreatePayload,
+  SaleHistoryItem,
+  SaleProfitabilityBreakdown,
+  SaleProfitabilityPreviewPayload,
+  SaleResponse,
+} from "@/lib/types/sales";
 
 export const salesService = {
   searchProducts(params: { q?: string; page?: number }) {
@@ -28,6 +37,14 @@ export const salesService = {
 
   createSale(payload: SaleCreatePayload) {
     return httpClient.post<SaleCreatePayload, SaleResponse>("/sales/", payload);
+  },
+
+  previewProfitability(payload: SaleProfitabilityPreviewPayload) {
+    return httpClient.post<SaleProfitabilityPreviewPayload, SaleProfitabilityBreakdown>("/sales/preview-profitability/", payload);
+  },
+
+  getOperatingCostRate() {
+    return httpClient.get<OperatingCostRateResponse>("/profitability/operating-cost-rate/");
   },
 
   confirmSale(id: string) {

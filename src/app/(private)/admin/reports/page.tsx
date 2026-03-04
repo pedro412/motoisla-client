@@ -550,6 +550,26 @@ export default function ReportsPage() {
                 tone="rose"
               />
             </Grid>
+            {report.profitability_metrics ? (
+              <Grid size={{ xs: 12, md: 6, xl: 3 }}>
+                <KpiCard
+                  title="Costo operativo asignado"
+                  value={formatMoney(report.profitability_metrics.operating_cost_total_allocated)}
+                  subtitle={`Tasa promedio ${(Number(report.profitability_metrics.operating_cost_rate_avg) * 100).toFixed(2)}%`}
+                  tone="teal"
+                />
+              </Grid>
+            ) : null}
+            {report.profitability_metrics ? (
+              <Grid size={{ xs: 12, md: 6, xl: 3 }}>
+                <KpiCard
+                  title="Fallback de tasa"
+                  value={formatNumber(report.profitability_metrics.fallback_usage_count)}
+                  subtitle="Ventas que usaron tasa base por baja muestra"
+                  tone="slate"
+                />
+              </Grid>
+            ) : null}
             <Grid size={{ xs: 12, md: 6, xl: 3 }}>
               <KpiCard
                 title="Inventario propio"

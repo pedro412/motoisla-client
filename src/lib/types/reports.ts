@@ -85,4 +85,9 @@ export interface SalesReportResponse extends MetricsResponse {
   };
   net_sales_after_expenses: string;
   net_profit: string;
+  profitability_metrics?: {
+    operating_cost_rate_avg: string;
+    operating_cost_total_allocated: string;
+    fallback_usage_count: number;
+  };
 }

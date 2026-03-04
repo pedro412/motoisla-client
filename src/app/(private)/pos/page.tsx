@@ -48,6 +48,16 @@ function currency(value: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
 }
 
+function rateSourceLabel(source?: string) {
+  if (source === "MTD_REAL") {
+    return "Fuente: mes actual";
+  }
+  if (source === "FALLBACK_BASE") {
+    return "Fuente: tasa base";
+  }
+  return "Fuente: no disponible";
+}
+
 function toMoneyInput(value: string) {
   return value.replace(/[^0-9.]/g, "");
 }
@@ -307,6 +317,46 @@ export default function PosPage() {
   const receivedAmount = Number(cashReceived || 0);
   const previewChange =
     paymentMethod === "CASH" && Number.isFinite(receivedAmount) ? Math.max(receivedAmount - remainingAfterCredit, 0) : 0;
+  const profitabilityPreviewPayload = useMemo(
+    () => ({
+      lines: lines.map((line) => ({
+        product: line.product.id,
+        qty: line.qty.toFixed(2),
+        unit_price: line.unitPrice.toFixed(2),
+        unit_cost: line.unitCost.toFixed(2),
+        discount_pct: line.discountPct.toFixed(2),
+      })),
+      payments: [
+        ...(safeCreditToApply > 0
+          ? ([
+              {
+                method: "CUSTOMER_CREDIT" as PaymentMethod,
+                amount: safeCreditToApply.toFixed(2),
+              },
+            ] as const)
+          : []),
+        ...(remainingAfterCredit > 0
+          ? ([
+              {
+                method: paymentMethod,
+                amount: remainingAfterCredit.toFixed(2),
+                card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
+                card_type: paymentMethod === "CARD" ? legacyCardTypeForPlan(selectedCardPlan) : undefined,
+              },
+            ] as const)
+          : []),
+      ],
+    }),
+    [lines, paymentMethod, remainingAfterCredit, safeCreditToApply, selectedCardPlan],
+  );
+
+  const profitabilityPreviewQuery = useQuery({
+    queryKey: ["sales-profitability-preview", profitabilityPreviewPayload],
+    queryFn: () => salesService.previewProfitability(profitabilityPreviewPayload),
+    enabled: checkoutOpen && lines.length > 0,
+    staleTime: 15_000,
+    retry: false,
+  });
 
   function resetCheckoutState() {
     setCheckoutOpen(false);
@@ -1219,6 +1269,81 @@ export default function PosPage() {
                 </Stack>
               </Stack>
             ) : null}
+
+            <Paper
+              sx={{
+                p: 1.75,
+                borderRadius: 2,
+                border: "1px solid rgba(148, 163, 184, 0.18)",
+                background: "rgba(15, 23, 42, 0.58)",
+              }}
+            >
+              <Stack spacing={1}>
+                <Typography variant="body2" sx={{ color: "#bae6fd", fontWeight: 800 }}>
+                  Utilidad neta estimada (preview)
+                </Typography>
+
+                {profitabilityPreviewQuery.isLoading ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Calculando preview...
+                  </Typography>
+                ) : null}
+
+                {profitabilityPreviewQuery.isError ? (
+                  <Alert severity="info" sx={{ py: 0.5 }}>
+                    El preview de rentabilidad no está disponible todavía en backend.
+                  </Alert>
+                ) : null}
+
+                {profitabilityPreviewQuery.data ? (
+                  <>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Costo operativo ({(Number(profitabilityPreviewQuery.data.operating_cost_rate_snapshot) * 100).toFixed(2)}%)
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800}>
+                        {currency(Number(profitabilityPreviewQuery.data.operating_cost_amount))}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      {rateSourceLabel(profitabilityPreviewQuery.data.operating_cost_rate_source)}
+                    </Typography>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Comisión
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800}>
+                        {currency(Number(profitabilityPreviewQuery.data.commission_amount))}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Utilidad neta total
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800}>
+                        {currency(Number(profitabilityPreviewQuery.data.net_profit_total))}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Split inversionistas
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800}>
+                        {currency(Number(profitabilityPreviewQuery.data.investor_profit_total))}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Split tienda
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800}>
+                        {currency(Number(profitabilityPreviewQuery.data.store_profit_total))}
+                      </Typography>
+                    </Stack>
+                  </>
+                ) : null}
+              </Stack>
+            </Paper>
           </Stack>
         </DialogContent>
         <DialogActions>
