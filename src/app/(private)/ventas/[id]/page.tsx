@@ -85,6 +85,7 @@ export default function SaleDetailPage() {
   }
 
   const sale = saleQuery.data;
+  const profitability = sale.profitability_breakdown;
 
   return (
     <Stack spacing={3}>
@@ -145,6 +146,37 @@ export default function SaleDetailPage() {
           </Stack>
         </Stack>
       </Paper>
+
+      {profitability ? (
+        <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Stack spacing={1.5}>
+            <Typography variant="h6">Snapshot financiero</Typography>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+              <Typography>
+                Costo operativo ({(Number(profitability.operating_cost_rate_snapshot) * 100).toFixed(2)}%):{" "}
+                <strong>{formatMoney(profitability.operating_cost_amount)}</strong>
+              </Typography>
+              <Typography>
+                Comisión: <strong>{formatMoney(profitability.commission_amount)}</strong>
+              </Typography>
+              <Typography>
+                Utilidad neta: <strong>{formatMoney(profitability.net_profit_total)}</strong>
+              </Typography>
+            </Stack>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+              <Typography>
+                Split inversionistas: <strong>{formatMoney(profitability.investor_profit_total)}</strong>
+              </Typography>
+              <Typography>
+                Split tienda: <strong>{formatMoney(profitability.store_profit_total)}</strong>
+              </Typography>
+              <Typography>
+                Fuente tasa: <strong>{profitability.operating_cost_rate_source}</strong>
+              </Typography>
+            </Stack>
+          </Stack>
+        </Paper>
+      ) : null}
 
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Stack spacing={2}>

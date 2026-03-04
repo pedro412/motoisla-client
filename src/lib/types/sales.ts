@@ -1,5 +1,6 @@
 export type PaymentMethod = "CASH" | "CARD" | "CUSTOMER_CREDIT";
 export type CardType = "NORMAL" | "MSI_3";
+export type ProfitabilityRateSource = "MTD_REAL" | "FALLBACK_BASE";
 
 export interface CardCommissionPlan {
   id: string;
@@ -50,6 +51,42 @@ export interface SaleCreatePayload {
   override_reason?: string;
 }
 
+export interface SaleLineProfitability {
+  product: string;
+  line_revenue: string;
+  line_cogs: string;
+  line_operating_cost: string;
+  line_commission_cost: string;
+  line_net_profit: string;
+  ownership: "STORE" | "INVESTOR";
+  investor_id?: string | null;
+  investor_profit_share: string;
+  store_profit_share: string;
+}
+
+export interface SaleProfitabilityBreakdown {
+  operating_cost_rate_snapshot: string;
+  operating_cost_rate_source: ProfitabilityRateSource;
+  operating_cost_amount: string;
+  commission_amount: string;
+  gross_profit_total: string;
+  net_profit_total: string;
+  investor_profit_total: string;
+  store_profit_total: string;
+  lines: SaleLineProfitability[];
+}
+
+export interface SaleProfitabilityPreviewPayload {
+  lines: SaleLineInput[];
+  payments: SalePaymentInput[];
+}
+
+export interface OperatingCostRateResponse {
+  operating_cost_rate: string;
+  rate_source: ProfitabilityRateSource;
+  calculated_at: string;
+}
+
 export interface SaleResponse {
   id: string;
   status: "DRAFT" | "CONFIRMED" | "VOID";
@@ -70,6 +107,7 @@ export interface SaleResponse {
     sales_count: number;
     confirmed_sales_count: number;
   } | null;
+  profitability_breakdown?: SaleProfitabilityBreakdown | null;
 }
 
 export interface SaleHistoryPayment {
