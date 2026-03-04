@@ -8,6 +8,12 @@
 - En compras, el campo antes etiquetado como “Venta” se corrigió a `Costo + IVA` y quedó calculado automáticamente.
 - El parser MYESA del cliente ahora soporta líneas de producto que no inician con `**`.
 
+## 2026-03-04 (Backlog rentabilidad inversionistas v1)
+- Se documentó y priorizó en P1 el trabajo de `Costo Operativo en Tiempo Real + Reparto Neto a Inversionistas` para implementación posterior.
+- Se agregó la especificación ejecutable en `docs/BACKLOG_PROFITABILITY_ENGINE_V1.md` con reglas de cálculo, decisiones cerradas, APIs propuestas, riesgos e idempotencia.
+- Se alinearon `docs/NEXT_STEPS.md`, `docs/PROJECT_STATUS.md` y `docs/README.md` para reflejar este backlog.
+- Cambio documental únicamente: no hay feature productiva ni modificación de contratos runtime en esta entrega.
+
 ## 2026-03-02 (Gastos + Reportes financieros)
 - Nueva pantalla `/expenses` con selector mensual, KPIs operativos y administración de gastos pagados/pendientes.
 - Soporte de plantillas de gastos fijos, generación mensual explícita y marcación de pagos/cancelación desde UI.

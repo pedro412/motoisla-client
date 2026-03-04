@@ -1,14 +1,15 @@
 # Next Steps (Prioritized)
 
 ## P1 - Operación crítica
-1. Agregar navegación por teclado al buscador de `Nueva Venta` (`ArrowDown`, `Enter`, `Esc`).
-2. Mostrar errores de create vs confirm de venta con resolución más guiada cuando una venta queda en `DRAFT`.
-3. Agregar filtros en `/ventas` (estatus, cajero, fecha e ID).
-4. Endurecer concurrencia del flujo `investors` (evitar sobreasignación por compras simultáneas).
-5. Agregar detalle de cliente con historial de compras ligado por teléfono.
-6. Ajustar UX de compras para edición masiva de líneas y guardado por lote.
-7. Extender parser cliente a proveedores adicionales además de MYESA.
-8. Agregar comparativos en `Reportes` contra periodo anterior y drill-down de métricas tienda vs inversionistas.
+1. Implementar motor de utilidad neta por venta + reparto automático a inversionistas con snapshot inmutable. Ver `docs/BACKLOG_PROFITABILITY_ENGINE_V1.md`.
+2. Agregar navegación por teclado al buscador de `Nueva Venta` (`ArrowDown`, `Enter`, `Esc`).
+3. Mostrar errores de create vs confirm de venta con resolución más guiada cuando una venta queda en `DRAFT`.
+4. Agregar filtros en `/ventas` (estatus, cajero, fecha e ID).
+5. Endurecer concurrencia del flujo `investors` (evitar sobreasignación por compras simultáneas).
+6. Agregar detalle de cliente con historial de compras ligado por teléfono.
+7. Ajustar UX de compras para edición masiva de líneas y guardado por lote.
+8. Extender parser cliente a proveedores adicionales además de MYESA.
+9. Agregar comparativos en `Reportes` contra periodo anterior y drill-down de métricas tienda vs inversionistas.
 
 ## P2 - QA funcional
 1. E2E completo de:

@@ -252,7 +252,6 @@ function FixedExpenseTemplateDialogBody({
   const initialForm = template ? templateToForm(template) : emptyTemplateForm();
   const [form, setForm] = useState<FixedExpenseTemplatePayload>(initialForm);
   const [error, setError] = useState("");
-
   async function handleSubmit() {
     try {
       setError("");
@@ -1001,6 +1000,7 @@ export default function ExpensesPage() {
       </Grid>
 
       <FixedExpenseTemplateDialog
+        key={`${templateDialogOpen ? "open" : "closed"}-${editingTemplate?.id ?? "new"}`}
         open={templateDialogOpen}
         template={editingTemplate}
         pending={createTemplateMutation.isPending || updateTemplateMutation.isPending}
