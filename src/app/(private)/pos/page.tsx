@@ -48,6 +48,16 @@ function currency(value: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
 }
 
+function rateSourceLabel(source?: string) {
+  if (source === "MTD_REAL") {
+    return "Fuente: mes actual";
+  }
+  if (source === "FALLBACK_BASE") {
+    return "Fuente: tasa base";
+  }
+  return "Fuente: no disponible";
+}
+
 function toMoneyInput(value: string) {
   return value.replace(/[^0-9.]/g, "");
 }
@@ -1295,6 +1305,9 @@ export default function PosPage() {
                         {currency(Number(profitabilityPreviewQuery.data.operating_cost_amount))}
                       </Typography>
                     </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      {rateSourceLabel(profitabilityPreviewQuery.data.operating_cost_rate_source)}
+                    </Typography>
                     <Stack direction="row" justifyContent="space-between">
                       <Typography variant="body2" color="text.secondary">
                         Comisión

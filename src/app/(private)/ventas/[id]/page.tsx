@@ -174,6 +174,30 @@ export default function SaleDetailPage() {
                 Fuente tasa: <strong>{profitability.operating_cost_rate_source}</strong>
               </Typography>
             </Stack>
+            {profitability.lines.length > 0 ? (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Producto</TableCell>
+                    <TableCell align="right">Neto línea</TableCell>
+                    <TableCell align="right">Split inversionista</TableCell>
+                    <TableCell align="right">Split tienda</TableCell>
+                    <TableCell align="right">Ownership</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {profitability.lines.map((line, index) => (
+                    <TableRow key={`${line.product}-${index}`}>
+                      <TableCell>{line.product}</TableCell>
+                      <TableCell align="right">{formatMoney(line.line_net_profit)}</TableCell>
+                      <TableCell align="right">{formatMoney(line.investor_profit_share)}</TableCell>
+                      <TableCell align="right">{formatMoney(line.store_profit_share)}</TableCell>
+                      <TableCell align="right">{line.ownership}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : null}
           </Stack>
         </Paper>
       ) : null}
