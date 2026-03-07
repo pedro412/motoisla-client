@@ -517,7 +517,6 @@ export default function PosPage() {
     setSubmitting(true);
     setErrorMessage(null);
 
-    let draftSale: SaleResponse | null = null;
     try {
       const payments = [];
       if (creditAmount > 0) {
@@ -550,8 +549,7 @@ export default function PosPage() {
         override_reason: overrideReason || undefined,
       };
 
-      draftSale = await salesService.createSale(payload);
-      const confirmedSale = await salesService.confirmSale(draftSale.id);
+      const confirmedSale = await salesService.createAndConfirmSale(payload);
       setCompletedSale(confirmedSale);
       setChangeDue(paymentMethod === "CASH" ? Math.max(receivedAmount - remainingAmount, 0) : 0);
       resetCheckoutState();
@@ -560,13 +558,9 @@ export default function PosPage() {
       setInfoMessage("Venta cobrada correctamente.");
     } catch (error) {
       if (error instanceof ApiError) {
-        if (draftSale) {
-          setErrorMessage(`La venta ${draftSale.id} quedó en borrador pero no se pudo confirmar: ${error.detail}`);
-        } else {
-          setErrorMessage(error.detail);
-        }
+        setErrorMessage(error.detail);
       } else {
-        setErrorMessage(draftSale ? `La venta ${draftSale.id} quedó en borrador pero no se pudo confirmar.` : "No fue posible cobrar la venta.");
+        setErrorMessage("No fue posible cobrar la venta.");
       }
     } finally {
       setSubmitting(false);

@@ -43,6 +43,10 @@ export const salesService = {
     return httpClient.post<SaleCreatePayload, SaleResponse>("/sales/", payload);
   },
 
+  createAndConfirmSale(payload: SaleCreatePayload) {
+    return httpClient.post<SaleCreatePayload, SaleResponse>("/sales/create-and-confirm/", payload);
+  },
+
   previewProfitability(payload: SaleProfitabilityPreviewPayload) {
     return httpClient.post<SaleProfitabilityPreviewPayload, SaleProfitabilityBreakdown>("/sales/preview-profitability/", payload);
   },
