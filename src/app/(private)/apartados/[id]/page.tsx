@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import {
   Alert,
   Box,
@@ -14,6 +15,7 @@ import {
   Divider,
   MenuItem,
   Paper,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -32,6 +34,10 @@ import { MoneyInput } from "@/components/forms/money-input";
 import { layawayService } from "@/modules/layaway/services/layaway.service";
 import { salesService } from "@/modules/sales/services/sales.service";
 import type { PaymentMethod } from "@/lib/types/sales";
+import type { LayawayDetailResponse } from "@/lib/types/layaway";
+import { buildLayawayTicketBytes } from "@/lib/print/escpos";
+import { printViaUSB } from "@/lib/print/usb-printer";
+import { usePrinterStore } from "@/store/printer-store";
 
 function formatMoney(value: string | number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(value));
@@ -69,6 +75,22 @@ export default function LayawayDetailPage() {
   const [newExpiresAt, setNewExpiresAt] = useState("");
   const [extendReason, setExtendReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [printData, setPrintData] = useState<{
+    layaway: LayawayDetailResponse;
+    type: "abono" | "liquidated";
+    abonoAmount?: number;
+    abonoMethod?: string;
+  } | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const { setStatus: setPrinterStatus, charWidth, storeAddress, storePhone } = usePrinterStore();
+
+  async function doPrint(data: { layaway: LayawayDetailResponse; type: "abono" | "liquidated"; abonoAmount?: number; abonoMethod?: string }) {
+    try {
+      await printViaUSB(buildLayawayTicketBytes(data.layaway, data.type, { charWidth, storeAddress, storePhone, abonoAmount: data.abonoAmount, abonoMethod: data.abonoMethod }));
+      setPrinterStatus("ok");
+    } catch { setPrinterStatus("error"); }
+  }
 
   const layawayQuery = useQuery({
     queryKey: ["layaway", id],
@@ -94,6 +116,14 @@ export default function LayawayDetailPage() {
       setSelectedCardPlanId(cardPlans[0].id);
     }
   }, [cardPlans, paymentMethod, selectedCardPlanId]);
+
+  useEffect(() => {
+    if (!printData) return;
+    const t = setTimeout(() => doPrint(printData), 200);
+    setSnackbarOpen(true);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [printData]);
 
   async function submitPayment() {
     if (!layawayQuery.data) {
@@ -124,10 +154,13 @@ export default function LayawayDetailPage() {
           card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
         },
       ];
+      let result: LayawayDetailResponse;
       if (paymentAmount >= dueValue) {
-        await layawayService.settleLayaway(id, { payments });
+        result = await layawayService.settleLayaway(id, { payments });
+        setPrintData({ layaway: result, type: "liquidated" });
       } else {
-        await layawayService.addPayments(id, { payments });
+        result = await layawayService.addPayments(id, { payments });
+        setPrintData({ layaway: result, type: "abono", abonoAmount: paymentAmount, abonoMethod: paymentMethod });
       }
       setPaymentOpen(false);
       setAmount("");
@@ -446,6 +479,19 @@ export default function LayawayDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={8000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={printData?.type === "liquidated" ? "Apartado liquidado" : "Abono registrado"}
+        action={
+          <Button color="inherit" size="small" startIcon={<PrintRoundedIcon />} onClick={() => printData && doPrint(printData)}>
+            Reimprimir
+          </Button>
+        }
+      />
     </Stack>
   );
 }

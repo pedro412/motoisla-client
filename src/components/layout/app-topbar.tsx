@@ -3,13 +3,15 @@
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import { AppBar, Box, Button, IconButton, Toolbar, Typography } from "@mui/material";
+import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
+import { AppBar, Box, Button, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { authService } from "@/modules/auth/services/auth.service";
 import { useSessionStore } from "@/store/session-store";
+import { usePrinterStore } from "@/store/printer-store";
 
 interface AppTopbarProps {
   title: string;
@@ -20,7 +22,35 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { session, clearSession } = useSessionStore();
+  const { status: printerStatus, setStatus: setPrinterStatus } = usePrinterStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("usb" in navigator)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const usb = (navigator as any).usb as { getDevices: () => Promise<unknown[]>; addEventListener: (event: string, handler: () => void) => void; removeEventListener: (event: string, handler: () => void) => void };
+
+    function onConnect() { setPrinterStatus("ok"); }
+    function onDisconnect() { setPrinterStatus("idle"); }
+
+    async function checkPrinter() {
+      try {
+        const devices = await usb.getDevices();
+        setPrinterStatus(devices.length > 0 ? "ok" : "idle");
+      } catch {
+        // WebUSB not authorized yet — leave as idle
+      }
+    }
+
+    checkPrinter();
+    usb.addEventListener("connect", onConnect);
+    usb.addEventListener("disconnect", onDisconnect);
+
+    return () => {
+      usb.removeEventListener("connect", onConnect);
+      usb.removeEventListener("disconnect", onDisconnect);
+    };
+  }, [setPrinterStatus]);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -66,6 +96,11 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
           <Button startIcon={<PersonRoundedIcon />} variant="text" color="inherit">
             {session.username ?? "Usuario"}
           </Button>
+          <Tooltip title={printerStatus === "ok" ? "Impresora lista" : "Impresora no detectada"}>
+            <IconButton size="small" sx={{ color: printerStatus === "ok" ? "#22c55e" : "#475569" }}>
+              <PrintRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Button
             startIcon={<LogoutRoundedIcon />}
             variant="outlined"

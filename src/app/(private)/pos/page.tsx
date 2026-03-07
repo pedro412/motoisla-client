@@ -3,6 +3,7 @@
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
   Alert,
@@ -34,7 +35,11 @@ import { ApiError } from "@/lib/api/errors";
 import { customerService } from "@/modules/customers/services/customer.service";
 import { layawayService } from "@/modules/layaway/services/layaway.service";
 import type { CardCommissionPlan, CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
+import type { LayawayDetailResponse } from "@/lib/types/layaway";
 import { salesService } from "@/modules/sales/services/sales.service";
+import { buildSaleTicketBytes, buildLayawayTicketBytes, type TicketConfig } from "@/lib/print/escpos";
+import { printViaUSB } from "@/lib/print/usb-printer";
+import { usePrinterStore } from "@/store/printer-store";
 
 interface CartLine {
   product: ProductSearchItem;
@@ -165,8 +170,15 @@ export default function PosPage() {
   const [cashReceived, setCashReceived] = useState("");
   const [completedSale, setCompletedSale] = useState<SaleResponse | null>(null);
   const [changeDue, setChangeDue] = useState(0);
+  const [completedLayaway, setCompletedLayaway] = useState<LayawayDetailResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  const { setStatus: setPrinterStatus, charWidth, storeAddress, storePhone } = usePrinterStore();
+  const ticketConfig: TicketConfig = useMemo(
+    () => ({ charWidth, storeAddress, storePhone }),
+    [charWidth, storeAddress, storePhone],
+  );
 
   const cardPlansQuery = useQuery({
     queryKey: ["card-commission-plans"],
@@ -289,6 +301,28 @@ export default function PosPage() {
       window.clearTimeout(timeoutId);
     };
   }, [customerPhone]);
+
+  useEffect(() => {
+    if (!completedSale) return;
+    const t = setTimeout(async () => {
+      try {
+        await printViaUSB(buildSaleTicketBytes(completedSale, changeDue, ticketConfig));
+        setPrinterStatus("ok");
+      } catch { setPrinterStatus("error"); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [completedSale, changeDue, ticketConfig, setPrinterStatus]);
+
+  useEffect(() => {
+    if (!completedLayaway) return;
+    const t = setTimeout(async () => {
+      try {
+        await printViaUSB(buildLayawayTicketBytes(completedLayaway, "created", ticketConfig));
+        setPrinterStatus("ok");
+      } catch { setPrinterStatus("error"); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [completedLayaway, ticketConfig, setPrinterStatus]);
 
   const subtotal = lines.reduce((acc, line) => acc + line.qty * line.unitPrice, 0);
   const discount = lines.reduce((acc, line) => acc + line.qty * line.unitPrice * (line.discountPct / 100), 0);
@@ -591,7 +625,7 @@ export default function PosPage() {
     setLayawaySubmitting(true);
     setErrorMessage(null);
     try {
-      await layawayService.createLayaway({
+      const createdLayaway = await layawayService.createLayaway({
         customer: {
           phone: customerPhone.trim(),
           name: customerName.trim(),
@@ -607,6 +641,7 @@ export default function PosPage() {
         expires_at: new Date(`${layawayExpiresAt}T23:59:00`).toISOString(),
         notes: layawayNotes.trim() || undefined,
       });
+      setCompletedLayaway(createdLayaway);
       setLayawayOpen(false);
       resetSaleBuilder();
       setInfoMessage("Apartado creado correctamente.");
@@ -1544,6 +1579,19 @@ export default function PosPage() {
         </DialogContent>
         <DialogActions>
           <Button
+            startIcon={<PrintRoundedIcon />}
+            variant="outlined"
+            onClick={async () => {
+              if (!completedSale) return;
+              try {
+                await printViaUSB(buildSaleTicketBytes(completedSale, changeDue, ticketConfig));
+                setPrinterStatus("ok");
+              } catch { setPrinterStatus("error"); }
+            }}
+          >
+            Reimprimir ticket
+          </Button>
+          <Button
             onClick={() => setSuccessOpen(false)}
             variant="contained"
             sx={{
@@ -1558,6 +1606,7 @@ export default function PosPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
     </Stack>
   );
 }

@@ -51,6 +51,10 @@ function getTitleFromPath(pathname: string): string {
     return "Apartados";
   }
 
+  if (pathname.startsWith("/settings/printer")) {
+    return "Impresora";
+  }
+
   return "MotoIsla";
 }
 
