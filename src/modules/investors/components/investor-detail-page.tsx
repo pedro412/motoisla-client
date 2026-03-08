@@ -11,8 +11,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Pagination,
   Paper,
+  Select,
   Stack,
   Table,
   TableBody,
@@ -30,7 +32,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { ApiError } from "@/lib/api/errors";
-import type { InvestorAssignmentItem, InvestorLedgerEntry, InvestorLedgerEntryType } from "@/lib/types/investors";
+import type { InvestorAssignmentItem, InvestorLedgerEntry, InvestorLedgerEntryType, InvestorLedgerFilters } from "@/lib/types/investors";
 import type { ProductListItem } from "@/lib/types/products";
 import { investorsService } from "@/modules/investors/services/investors.service";
 import { productsService } from "@/modules/products/services/products.service";
@@ -198,6 +200,10 @@ export function InvestorDetailPage() {
   const queryClient = useQueryClient();
   const [assignmentsPage, setAssignmentsPage] = useState(1);
   const [ledgerPage, setLedgerPage] = useState(1);
+  const [draftEntryType, setDraftEntryType] = useState<InvestorLedgerEntryType | "">("");
+  const [draftDateFrom, setDraftDateFrom] = useState("");
+  const [draftDateTo, setDraftDateTo] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<InvestorLedgerFilters>({});
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [taxRatePct, setTaxRatePct] = useState("16.00");
@@ -231,8 +237,12 @@ export function InvestorDetailPage() {
   });
 
   const ledgerQuery = useQuery({
-    queryKey: ["investor-ledger", investorId, ledgerPage],
-    queryFn: () => investorsService.getInvestorLedger(investorId ?? "", { page: ledgerPage }),
+    queryKey: ["investor-ledger", investorId, ledgerPage, appliedFilters],
+    queryFn: () =>
+      investorsService.getInvestorLedger(investorId ?? "", {
+        page: ledgerPage,
+        ...appliedFilters,
+      }),
     enabled: Boolean(investorId),
   });
 
@@ -336,6 +346,26 @@ export function InvestorDetailPage() {
 
   const investor = investorQuery.data;
   const ledgerEntries = ledgerQuery.data?.results ?? [];
+  const ledgerTotals = ledgerQuery.data?.totals;
+  const hasActiveFilters = Boolean(appliedFilters.entry_type || appliedFilters.date_from || appliedFilters.date_to);
+
+  function applyLedgerFilters() {
+    setLedgerPage(1);
+    setAppliedFilters({
+      entry_type: draftEntryType || undefined,
+      date_from: draftDateFrom || undefined,
+      date_to: draftDateTo || undefined,
+    });
+  }
+
+  function clearLedgerFilters() {
+    setDraftEntryType("");
+    setDraftDateFrom("");
+    setDraftDateTo("");
+    setLedgerPage(1);
+    setAppliedFilters({});
+  }
+
   const sortedAssignments = useMemo(
     () => {
       const assignments = assignmentsQuery.data?.results ?? [];
@@ -672,14 +702,86 @@ export function InvestorDetailPage() {
       <Paper sx={{ p: 2.5 }}>
         <Stack spacing={2}>
           <Typography variant="h6">Movimientos</Typography>
+
+          {/* Filter bar */}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} flexWrap="wrap" alignItems="flex-end">
+            <Select
+              size="small"
+              displayEmpty
+              value={draftEntryType}
+              onChange={(e) => setDraftEntryType(e.target.value as InvestorLedgerEntryType | "")}
+              sx={{ minWidth: 190 }}
+            >
+              <MenuItem value="">Todos los tipos</MenuItem>
+              <MenuItem value="CAPITAL_DEPOSIT">Depósito</MenuItem>
+              <MenuItem value="CAPITAL_WITHDRAWAL">Retiro</MenuItem>
+              <MenuItem value="CAPITAL_TO_INVENTORY">Compra de inventario</MenuItem>
+              <MenuItem value="INVENTORY_TO_CAPITAL">Recuperación de capital</MenuItem>
+              <MenuItem value="PROFIT_SHARE">Utilidad</MenuItem>
+              <MenuItem value="REINVESTMENT">Reinversión</MenuItem>
+            </Select>
+            <TextField
+              size="small"
+              label="Desde"
+              type="date"
+              value={draftDateFrom}
+              onChange={(e) => setDraftDateFrom(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 155 }}
+            />
+            <TextField
+              size="small"
+              label="Hasta"
+              type="date"
+              value={draftDateTo}
+              onChange={(e) => setDraftDateTo(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 155 }}
+            />
+            <Button variant="contained" size="small" onClick={applyLedgerFilters} disabled={ledgerQuery.isFetching}>
+              Buscar
+            </Button>
+            {hasActiveFilters && (
+              <Button variant="outlined" size="small" onClick={clearLedgerFilters}>
+                Limpiar
+              </Button>
+            )}
+          </Stack>
+
+          {/* Period totals when filters are active */}
+          {hasActiveFilters && ledgerTotals && !ledgerQuery.isFetching && (
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5 }}>
+              <Paper variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">Capital (período)</Typography>
+                <Typography fontWeight={700} color={Number(ledgerTotals.capital_total) >= 0 ? "success.main" : "error.main"}>
+                  {formatCurrency(ledgerTotals.capital_total)}
+                </Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">Inventario (período)</Typography>
+                <Typography fontWeight={700} color={Number(ledgerTotals.inventory_total) >= 0 ? "success.main" : "error.main"}>
+                  {formatCurrency(ledgerTotals.inventory_total)}
+                </Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">Utilidad (período)</Typography>
+                <Typography fontWeight={700} color={Number(ledgerTotals.profit_total) >= 0 ? "success.main" : "error.main"}>
+                  {formatCurrency(ledgerTotals.profit_total)}
+                </Typography>
+              </Paper>
+            </Box>
+          )}
+
           {ledgerError ? <Alert severity="error">{ledgerError}</Alert> : null}
-          {ledgerQuery.isLoading ? (
+          {ledgerQuery.isFetching ? (
             <Box sx={{ display: "grid", placeItems: "center", py: 4 }}>
               <CircularProgress size={24} />
             </Box>
           ) : null}
-          {!ledgerQuery.isLoading && ledgerEntries.length === 0 ? (
-            <Alert severity="info">Todavía no hay movimientos registrados para este inversionista.</Alert>
+          {!ledgerQuery.isFetching && ledgerEntries.length === 0 ? (
+            <Alert severity="info">
+              {hasActiveFilters ? "No hay movimientos que coincidan con los filtros." : "Todavía no hay movimientos registrados para este inversionista."}
+            </Alert>
           ) : null}
           {ledgerEntries.length > 0 ? (
             <>

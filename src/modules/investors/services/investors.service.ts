@@ -5,6 +5,7 @@ import type {
   InvestorCreatePayload,
   InvestorDetail,
   InvestorLedgerEntry,
+  InvestorLedgerFilters,
   InvestorLedgerResponse,
   InvestorPurchasePayload,
   InvestorPurchaseResponse,
@@ -34,9 +35,12 @@ export const investorsService = {
     });
   },
 
-  getInvestorLedger(id: string, params: { page?: number }) {
+  getInvestorLedger(id: string, params: InvestorLedgerFilters) {
     return httpClient.get<InvestorLedgerResponse>(`/investors/${id}/ledger/`, {
       page: params.page,
+      entry_type: params.entry_type || undefined,
+      date_from: params.date_from || undefined,
+      date_to: params.date_to || undefined,
     });
   },
 
