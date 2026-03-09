@@ -1,5 +1,10 @@
 # Work Changelog
 
+## 2026-03-09 (Media R2 + checklist de producción)
+- Se implementó el flujo de imágenes desacoplado con Cloudflare R2 (presign, upload directo, complete, attach por producto y soft delete).
+- Se actualizó el contrato de producto a `images[]` + `primary_image_id` para panel interno y catálogo público.
+- Se agregó guía operativa de despliegue en `docs/R2_PRODUCTION_CHECKLIST.md` y enlace desde README.
+
 ## 2026-03-02 (UI polish + reglas de detalle)
 - Nuevo patrón reusable `DetailPageHeader` para vistas detalle con breadcrumb, botón de regreso y acción principal alineada.
 - Aplicado en detalles de `productos`, `ventas`, `apartados`, `inversionistas` y en edición de producto.

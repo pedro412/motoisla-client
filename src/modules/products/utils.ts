@@ -9,7 +9,6 @@ export interface ProductFormState {
   brand_name: string;
   product_type: string | null;
   product_type_name: string;
-  primary_image_url: string;
   extraPrices: Record<string, string>;
 }
 
@@ -20,7 +19,6 @@ export interface ProductFormErrors {
   default_price?: string;
   brand?: string;
   product_type?: string;
-  primary_image_url?: string;
   extraPrices?: Record<string, string>;
 }
 
@@ -178,7 +176,6 @@ export function createEmptyProductFormState(): ProductFormState {
     brand_name: "",
     product_type: null,
     product_type_name: "",
-    primary_image_url: "",
     extraPrices: { cost_price: "" },
   };
 }
@@ -199,7 +196,6 @@ export function createProductFormState(product: ProductDetail): ProductFormState
     brand_name: product.brand_name ?? "",
     product_type: product.product_type ?? null,
     product_type_name: product.product_type_name ?? "",
-    primary_image_url: product.primary_image_url ?? "",
     extraPrices,
   };
 }
@@ -211,7 +207,7 @@ function validateNonNegativeNumber(rawValue: string, label: string) {
 
   const parsed = Number(rawValue);
   if (!Number.isFinite(parsed) || parsed < 0) {
-    return `${label} debe ser un número mayor o igual a 0.`;
+    return `${label} debe ser un numero mayor o igual a 0.`;
   }
 
   return undefined;
@@ -252,9 +248,7 @@ export function validateProductForm(form: ProductFormState): ProductFormErrors {
 }
 
 export function humanizeFieldName(field: string) {
-  return field
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  return field.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export function getProfitMetrics(costPriceValue: string | null | undefined, salePriceValue: string | null | undefined): ProfitMetrics {
@@ -317,7 +311,7 @@ export function applyApiFieldErrors(errors: ProductFormErrors, fields: Record<st
       return;
     }
 
-    if (key === "sku" || key === "name" || key === "stock" || key === "default_price" || key === "primary_image_url") {
+    if (key === "sku" || key === "name" || key === "stock" || key === "default_price") {
       (nextErrors as Record<string, unknown>)[key] = message;
       return;
     }
@@ -349,7 +343,6 @@ export function toProductCreatePayload(form: ProductFormState): ProductCreatePay
     default_price: normalizeMoneyInput(form.default_price.trim()),
     brand: form.brand,
     product_type: form.product_type,
-    primary_image_url: form.primary_image_url.trim() ? form.primary_image_url.trim() : null,
   };
 
   const costPrice = form.extraPrices.cost_price?.trim();
@@ -374,7 +367,6 @@ export function toProductUpdatePayload(form: ProductFormState): ProductUpdatePay
     default_price: normalizeMoneyInput(form.default_price.trim()),
     brand: form.brand,
     product_type: form.product_type,
-    primary_image_url: form.primary_image_url.trim() ? form.primary_image_url.trim() : null,
   };
 
   Object.entries(form.extraPrices).forEach(([key, value]) => {

@@ -19,6 +19,7 @@ import {
   getProfitMetrics,
   humanizeFieldName,
 } from "@/modules/products/utils";
+import { getPrimaryImageUrl } from "@/modules/products/image-upload";
 import { useSessionStore } from "@/store/session-store";
 
 export function ProductDetailPage() {
@@ -28,6 +29,7 @@ export function ProductDetailPage() {
   const productId = params.id ?? "";
   const [snackbarOpen, setSnackbarOpen] = useState(searchParams.get("updated") === "1");
   const [createdSnackbarOpen, setCreatedSnackbarOpen] = useState(searchParams.get("created") === "1");
+  const [uploadWarningOpen, setUploadWarningOpen] = useState(searchParams.get("upload") === "partial");
   const { session } = useSessionStore();
 
   const productQuery = useQuery({
@@ -193,7 +195,7 @@ export function ProductDetailPage() {
         <Stack spacing={2.5}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "flex-start", md: "center" }}>
             <Avatar
-              src={product.primary_image_url ?? undefined}
+              src={getPrimaryImageUrl(product.images, product.primary_image_id, false) ?? undefined}
               alt={product.name}
               sx={{
                 width: 92,
@@ -271,7 +273,7 @@ export function ProductDetailPage() {
               <Typography sx={{ color: "#e2e8f0" }}>Creado: {formatDateTime(product.created_at)}</Typography>
               <Typography sx={{ color: "#e2e8f0" }}>Actualizado: {formatDateTime(product.updated_at)}</Typography>
               <Typography sx={{ color: "#e2e8f0" }}>
-                Imagen principal: {product.primary_image_url ? product.primary_image_url : "No disponible"}
+                Imagen principal: {getPrimaryImageUrl(product.images, product.primary_image_id, false) ?? "No disponible"}
               </Typography>
             </Stack>
           </Paper>
@@ -321,6 +323,28 @@ export function ProductDetailPage() {
           sx={{ width: "100%" }}
         >
           Producto creado correctamente.
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={uploadWarningOpen}
+        autoHideDuration={4500}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        onClose={() => {
+          setUploadWarningOpen(false);
+          router.replace(`/products/`);
+        }}
+      >
+        <Alert
+          onClose={() => {
+            setUploadWarningOpen(false);
+            router.replace(`/products/`);
+          }}
+          severity="warning"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          El producto se guardo, pero una o mas imagenes no se pudieron subir.
         </Alert>
       </Snackbar>
     </Stack>

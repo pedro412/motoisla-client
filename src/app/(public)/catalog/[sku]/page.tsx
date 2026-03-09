@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { catalogService } from "@/modules/catalog/services/catalog.service";
+import { getPrimaryImageUrl } from "@/modules/products/image-upload";
+
 export default function CatalogDetailPage() {
   const params = useParams<{ sku: string }>();
   const sku = params.sku ?? "";
@@ -17,11 +19,13 @@ export default function CatalogDetailPage() {
     staleTime: 60_000,
   });
 
+  const imageUrl = data ? getPrimaryImageUrl(data.images, data.primary_image_id, false) : null;
+
   return (
     <Box sx={{ maxWidth: 800, mx: "auto", py: 4, px: 2 }}>
       <Stack spacing={2}>
         <Typography component={Link} href="/catalog" color="primary.main">
-          ← Volver al catálogo
+          ← Volver al catalogo
         </Typography>
 
         {isLoading ? (
@@ -36,16 +40,26 @@ export default function CatalogDetailPage() {
 
         {data ? (
           <Paper sx={{ p: 3 }}>
-            <Stack spacing={1}>
+            <Stack spacing={1.5}>
               <Typography variant="h4" fontWeight={700}>
                 {data.name}
               </Typography>
               <Typography color="text.secondary">SKU: {data.sku}</Typography>
               <Typography variant="h5">${Number(data.default_price).toFixed(2)}</Typography>
               <Typography color="text.secondary">Actualizado: {new Date(data.updated_at).toLocaleString()}</Typography>
-              <Typography color="text.secondary">
-                Imagen principal: {data.primary_image_url ? data.primary_image_url : "No disponible"}
-              </Typography>
+              <Box
+                component="img"
+                src={imageUrl ?? undefined}
+                alt={data.name}
+                sx={{
+                  width: "100%",
+                  maxHeight: 360,
+                  objectFit: "contain",
+                  borderRadius: 2,
+                  backgroundColor: "rgba(148, 163, 184, 0.08)",
+                  border: "1px solid rgba(148, 163, 184, 0.16)",
+                }}
+              />
             </Stack>
           </Paper>
         ) : null}

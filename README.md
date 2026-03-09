@@ -15,6 +15,9 @@ Crear `.env.local`:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_MEDIA_MAX_BYTES=8388608
+NEXT_PUBLIC_MEDIA_MAX_DIMENSION=3000
+NEXT_PUBLIC_MEDIA_BASE_URL=https://public.r2.dev
 ```
 
 ## Scripts
@@ -60,7 +63,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - Parser MYESA en cliente ya soporta filas de producto con o sin prefijo `**`, manteniendo cálculo de `Costo + IVA` en preview.
 - Captura de `marca` y `tipo de producto` por línea con sugerencia automática + creación inline de taxonomy.
 - Cálculo de `precio_publico` y margen en tiempo real por línea.
-- Módulo privado de `Productos` con listado, filtros por marca/tipo, detalle, edición, borrado y tabla de movimientos.
+- Módulo privado de `Productos` con listado, filtros por marca/tipo, detalle, edición, borrado, tabla de movimientos y carga real de imagenes via presigned upload.
 - Regla visual nueva para vistas de detalle: `breadcrumb` arriba, botón `Volver` a la izquierda y acción principal a la derecha.
 - Regla visual nueva para vistas operativas: superficies dark/slate, headers con jerarquía alta y tablas sin bloques blancos planos.
 
@@ -80,6 +83,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 
 ## Documentación
 - [docs index](./docs/README.md)
+- [r2 production checklist](./docs/R2_PRODUCTION_CHECKLIST.md)
 - [project status](./docs/PROJECT_STATUS.md)
 - [next steps](./docs/NEXT_STEPS.md)
 - [qa checklist](./docs/QA_CHECKLIST.md)

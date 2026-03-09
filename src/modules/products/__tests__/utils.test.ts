@@ -23,7 +23,8 @@ describe("products utils", () => {
         name: "zeta",
         stock: "0",
         default_price: "10.00",
-        primary_image_url: null,
+        primary_image_id: null,
+        images: [],
       },
       {
         id: "2",
@@ -31,7 +32,8 @@ describe("products utils", () => {
         name: "Alfa",
         stock: "5",
         default_price: "10.00",
-        primary_image_url: null,
+        primary_image_id: null,
+        images: [],
       },
       {
         id: "1",
@@ -39,7 +41,8 @@ describe("products utils", () => {
         name: "beta",
         stock: "-1",
         default_price: "10.00",
-        primary_image_url: null,
+        primary_image_id: null,
+        images: [],
       },
     ];
 
@@ -56,7 +59,6 @@ describe("products utils", () => {
       brand_name: "",
       product_type: null,
       product_type_name: "",
-      primary_image_url: "",
       extraPrices: {
         wholesale_price: "-5",
       },
@@ -82,26 +84,25 @@ describe("products utils", () => {
       product_type: "type-1",
       product_type_name: "CASCOS",
       wholesale_price: "450.00",
-      primary_image_url: "https://example.com/casco.jpg",
+      primary_image_id: null,
+      images: [],
       can_delete: true,
     };
 
     const form = createProductFormState(product);
-    form.primary_image_url = "";
     form.default_price = "1,200.50";
     form.extraPrices.cost_price = "800.10";
 
     const payload = toProductUpdatePayload(form);
-    expect(payload.primary_image_url).toBeNull();
     expect(payload.wholesale_price).toBe("450.00");
     expect(payload.default_price).toBe("1200.50");
     expect(payload.cost_price).toBe("800.10");
     expect(payload.brand).toBe("brand-1");
     expect(payload.product_type).toBe("type-1");
 
-    const mapped = applyApiFieldErrors({}, { sku: ["SKU duplicado"], wholesale_price: ["Precio inválido"] });
+    const mapped = applyApiFieldErrors({}, { sku: ["SKU duplicado"], wholesale_price: ["Precio invalido"] });
     expect(mapped.sku).toBe("SKU duplicado");
-    expect(mapped.extraPrices?.wholesale_price).toBe("Precio inválido");
+    expect(mapped.extraPrices?.wholesale_price).toBe("Precio invalido");
   });
 
   it("normalizes and formats money input values", () => {

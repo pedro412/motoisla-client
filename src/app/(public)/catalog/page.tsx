@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { catalogService } from "@/modules/catalog/services/catalog.service";
+import { getPrimaryImageUrl } from "@/modules/products/image-upload";
 
 const pageSize = 20;
 
@@ -40,7 +41,7 @@ export default function CatalogPage() {
     <Box sx={{ maxWidth: 1000, mx: "auto", py: 4, px: 2 }}>
       <Stack spacing={2}>
         <Typography variant="h4" fontWeight={700}>
-          Catálogo Público
+          Catalogo Publico
         </Typography>
         <TextField
           label="Buscar por nombre o SKU"
@@ -59,29 +60,48 @@ export default function CatalogPage() {
         ) : null}
 
         {isError ? (
-          <Alert severity="error">{(error as Error)?.message ?? "No fue posible cargar el catálogo."}</Alert>
+          <Alert severity="error">{(error as Error)?.message ?? "No fue posible cargar el catalogo."}</Alert>
         ) : null}
 
         {!isLoading && data && data.results.length === 0 ? (
-          <Alert severity="info">No hay productos para la búsqueda actual.</Alert>
+          <Alert severity="info">No hay productos para la busqueda actual.</Alert>
         ) : null}
 
-        {data?.results.map((item) => (
-          <Paper key={item.id} sx={{ p: 2.5 }}>
-            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1}>
-              <Box>
-                <Typography variant="h6">{item.name}</Typography>
-                <Typography color="text.secondary">SKU: {item.sku}</Typography>
-              </Box>
-              <Stack alignItems={{ xs: "flex-start", sm: "flex-end" }} spacing={0.5}>
-                <Typography variant="h6">${Number(item.default_price).toFixed(2)}</Typography>
-                <Typography component={Link} href={`/catalog/${item.sku}`} color="primary.main">
-                  Ver detalle
-                </Typography>
+        {data?.results.map((item) => {
+          const imageUrl = getPrimaryImageUrl(item.images, item.primary_image_id, true);
+
+          return (
+            <Paper key={item.id} sx={{ p: 2.5 }}>
+              <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2}>
+                <Stack direction="row" spacing={2}>
+                  <Box
+                    component="img"
+                    src={imageUrl ?? undefined}
+                    alt={item.name}
+                    sx={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: 2,
+                      objectFit: "cover",
+                      bgcolor: "rgba(148, 163, 184, 0.14)",
+                      border: "1px solid rgba(148, 163, 184, 0.2)",
+                    }}
+                  />
+                  <Box>
+                    <Typography variant="h6">{item.name}</Typography>
+                    <Typography color="text.secondary">SKU: {item.sku}</Typography>
+                  </Box>
+                </Stack>
+                <Stack alignItems={{ xs: "flex-start", sm: "flex-end" }} spacing={0.5}>
+                  <Typography variant="h6">${Number(item.default_price).toFixed(2)}</Typography>
+                  <Typography component={Link} href={`/catalog/${item.sku}`} color="primary.main">
+                    Ver detalle
+                  </Typography>
+                </Stack>
               </Stack>
-            </Stack>
-          </Paper>
-        ))}
+            </Paper>
+          );
+        })}
 
         <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
           <Pagination

@@ -3,6 +3,7 @@
 import {
   Alert,
   Autocomplete,
+  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -16,14 +17,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { ApiError } from "@/lib/api/errors";
-import type { ProductCreatePayload, ProductDetail, ProductUpdatePayload } from "@/lib/types/products";
+import { MEDIA_MAX_BYTES, MEDIA_MAX_DIMENSION } from "@/lib/config/env";
+import type { ProductDetail } from "@/lib/types/products";
+import { createThumbnailFile, generatePendingImageId, readImageDimensions, validateImageMime, validateImageSize } from "@/modules/products/image-upload";
 import { ProductDeleteDialog } from "@/modules/products/components/product-delete-dialog";
 import { productsService } from "@/modules/products/services/products.service";
 import { taxonomyService } from "@/modules/taxonomy/services/taxonomy.service";
@@ -48,6 +51,14 @@ import { useSessionStore } from "@/store/session-store";
 
 const CREATE_PREFIX = "__create__::";
 
+interface PendingImage {
+  id: string;
+  file: File;
+  width: number;
+  height: number;
+  previewUrl: string;
+}
+
 function getOptionsWithCreate(options: string[], input: string): string[] {
   const trimmed = input.trim().toUpperCase();
   if (!trimmed) {
@@ -66,6 +77,18 @@ function displayOption(option: string): string {
   return option;
 }
 
+async function uploadFileToPresignedTarget(target: { method: "PUT"; url: string; headers: Record<string, string> }, file: File) {
+  const response = await fetch(target.url, {
+    method: target.method,
+    headers: target.headers,
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error("No fue posible subir la imagen a storage.");
+  }
+}
+
 interface ProductEditFormContentProps {
   product?: ProductDetail;
   mode: "create" | "edit";
@@ -75,6 +98,7 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
   const router = useRouter();
   const queryClient = useQueryClient();
   const isCreate = mode === "create";
+
   const [form, setForm] = useState<ProductFormState>(() =>
     product ? createProductFormState(product) : createEmptyProductFormState(),
   );
@@ -88,6 +112,13 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
   const [stockReasonError, setStockReasonError] = useState<string | null>(null);
   const [brandSearch, setBrandSearch] = useState(product?.brand_name ?? "");
   const [typeSearch, setTypeSearch] = useState(product?.product_type_name ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingActive, setIsTogglingActive] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [imageActionLoadingId, setImageActionLoadingId] = useState<string | null>(null);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [existingImages, setExistingImages] = useState(() => product?.images ?? []);
 
   const costPriceKey = useMemo(() => (isCreate ? "cost_price" : getCostPriceFieldKey(product)), [isCreate, product]);
   const [costPriceWithTaxInput, setCostPriceWithTaxInput] = useState(() => addTaxToAmount(form.extraPrices[costPriceKey] ?? ""));
@@ -113,83 +144,16 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
   const typeNames = useMemo(() => (productTypesQuery.data?.results ?? []).map((t) => t.name), [productTypesQuery.data]);
   const typeResults = productTypesQuery.data?.results ?? [];
 
-  const createMutation = useMutation({
-    mutationFn: (payload: ProductCreatePayload) => productsService.createProduct(payload),
-    onSuccess: async (createdProduct) => {
-      await queryClient.invalidateQueries({ queryKey: ["products"] });
-      router.push(`/products/${createdProduct.id}?created=1`);
-    },
-    onError: (error: unknown) => {
-      if (error instanceof ApiError) {
-        setGeneralError(error.detail);
-        setFormErrors((current) => applyApiFieldErrors(current, error.fields));
-        return;
+  const sortedExistingImages = useMemo(() => {
+    return [...existingImages].sort((left, right) => {
+      if (left.is_primary !== right.is_primary) {
+        return left.is_primary ? -1 : 1;
       }
+      return left.sort_order - right.sort_order;
+    });
+  }, [existingImages]);
 
-      setGeneralError("No fue posible crear el producto.");
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (payload: ProductUpdatePayload) => productsService.updateProduct(product!.id, payload),
-    onSuccess: async (updatedProduct) => {
-      await queryClient.invalidateQueries({ queryKey: ["products"] });
-      await queryClient.invalidateQueries({ queryKey: ["product", product!.id] });
-      setSuccessMessage("Producto actualizado correctamente.");
-      router.push(`/products/${updatedProduct.id}?updated=1`);
-    },
-    onError: (error: unknown) => {
-      if (error instanceof ApiError) {
-        setGeneralError(error.detail);
-        setFormErrors((current) => applyApiFieldErrors(current, error.fields));
-        const stockReasonFieldMessage = error.fields.stock_adjust_reason;
-        if (stockReasonFieldMessage) {
-          setStockReasonError(String(Array.isArray(stockReasonFieldMessage) ? stockReasonFieldMessage.join(" ") : stockReasonFieldMessage));
-          setStockReasonOpen(true);
-        }
-        return;
-      }
-
-      setGeneralError("No fue posible guardar el producto.");
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: () => productsService.deleteProduct(product!.id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["products"] });
-      await queryClient.invalidateQueries({ queryKey: ["product", product!.id] });
-      setDeleteOpen(false);
-      router.push("/products?deleted=1");
-    },
-    onError: (error: unknown) => {
-      if (error instanceof ApiError) {
-        setGeneralError(error.detail);
-        return;
-      }
-
-      setGeneralError("No fue posible borrar el producto.");
-    },
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: () => productsService.toggleActive(product!.id, !product!.is_active),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["products"] });
-      await queryClient.invalidateQueries({ queryKey: ["product", product!.id] });
-      setToggleActiveOpen(false);
-      const action = product!.is_active ? "desactivado" : "activado";
-      router.push(`/products/${product!.id}?updated=1`);
-      setSuccessMessage(`Producto ${action} correctamente.`);
-    },
-    onError: (error: unknown) => {
-      if (error instanceof ApiError) {
-        setGeneralError(error.detail);
-        return;
-      }
-      setGeneralError("No fue posible cambiar el estado del producto.");
-    },
-  });
+  const canMutateImageList = !isCreate && Boolean(product?.id) && !isUploadingImages;
 
   function updateField<K extends keyof ProductFormState>(key: K, value: ProductFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -248,9 +212,172 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
     }
   }, [queryClient]);
 
-  async function handleSubmit() {
+  async function refreshExistingImages(productId: string) {
+    const images = await productsService.listProductImages(productId);
+    setExistingImages(images);
+  }
+
+  async function uploadPendingImagesForProduct(productId: string): Promise<{ failed: number }> {
+    if (!pendingImages.length) {
+      return { failed: 0 };
+    }
+
+    setIsUploadingImages(true);
+    const failedIds = new Set<string>();
+
+    try {
+      for (const pendingImage of pendingImages) {
+        try {
+          const thumb = await createThumbnailFile(pendingImage.file, 480);
+
+          const presign = await productsService.presignMediaUpload({
+            original: {
+              filename: pendingImage.file.name,
+              mime: pendingImage.file.type,
+              size: pendingImage.file.size,
+              width: pendingImage.width,
+              height: pendingImage.height,
+            },
+            thumb: {
+              filename: thumb.file.name,
+              mime: thumb.file.type,
+              size: thumb.file.size,
+              width: thumb.width,
+              height: thumb.height,
+            },
+          });
+
+          await uploadFileToPresignedTarget(presign.original, pendingImage.file);
+          await uploadFileToPresignedTarget(presign.thumb, thumb.file);
+
+          const completed = await productsService.completeMediaUpload(presign.upload_token);
+          await productsService.attachProductImage(productId, {
+            asset_id: completed.asset_id,
+          });
+
+          URL.revokeObjectURL(pendingImage.previewUrl);
+        } catch {
+          failedIds.add(pendingImage.id);
+        }
+      }
+
+      setPendingImages((current) => current.filter((item) => failedIds.has(item.id)));
+      await refreshExistingImages(productId);
+
+      return { failed: failedIds.size };
+    } finally {
+      setIsUploadingImages(false);
+    }
+  }
+
+  async function handleSelectImages(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    setGeneralError(null);
+
+    const selectedFiles = Array.from(files);
+    const nextPending: PendingImage[] = [];
+    const errors: string[] = [];
+
+    for (const file of selectedFiles) {
+      const mimeError = validateImageMime(file);
+      if (mimeError) {
+        errors.push(`${file.name}: ${mimeError}`);
+        continue;
+      }
+
+      const sizeError = validateImageSize(file, MEDIA_MAX_BYTES);
+      if (sizeError) {
+        errors.push(`${file.name}: ${sizeError}`);
+        continue;
+      }
+
+      try {
+        const dimensions = await readImageDimensions(file);
+        if (dimensions.width > MEDIA_MAX_DIMENSION || dimensions.height > MEDIA_MAX_DIMENSION) {
+          errors.push(`${file.name}: excede ${MEDIA_MAX_DIMENSION}px por lado.`);
+          continue;
+        }
+
+        nextPending.push({
+          id: generatePendingImageId(),
+          file,
+          width: dimensions.width,
+          height: dimensions.height,
+          previewUrl: URL.createObjectURL(file),
+        });
+      } catch {
+        errors.push(`${file.name}: no se pudo leer la imagen.`);
+      }
+    }
+
+    if (errors.length > 0) {
+      setGeneralError(errors.join(" "));
+    }
+
+    if (nextPending.length > 0) {
+      setPendingImages((current) => [...current, ...nextPending]);
+    }
+  }
+
+  function removePendingImage(id: string) {
+    setPendingImages((current) => {
+      const image = current.find((item) => item.id === id);
+      if (image) {
+        URL.revokeObjectURL(image.previewUrl);
+      }
+      return current.filter((item) => item.id !== id);
+    });
+  }
+
+  async function handleSetPrimaryImage(imageId: string) {
+    if (!product?.id) {
+      return;
+    }
+
+    setImageActionLoadingId(imageId);
+    setGeneralError(null);
+    try {
+      await productsService.updateProductImage(product.id, imageId, { is_primary: true });
+      await refreshExistingImages(product.id);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setGeneralError(error.detail);
+      } else {
+        setGeneralError("No fue posible actualizar la imagen principal.");
+      }
+    } finally {
+      setImageActionLoadingId(null);
+    }
+  }
+
+  async function handleDeleteImage(imageId: string) {
+    if (!product?.id) {
+      return;
+    }
+
+    setImageActionLoadingId(imageId);
+    setGeneralError(null);
+    try {
+      await productsService.deleteProductImage(product.id, imageId);
+      await refreshExistingImages(product.id);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setGeneralError(error.detail);
+      } else {
+        setGeneralError("No fue posible borrar la imagen.");
+      }
+    } finally {
+      setImageActionLoadingId(null);
+    }
+  }
+
+  async function saveProductAndUploads() {
     setGeneralError(null);
     setStockReasonError(null);
+
     const nextErrors = validateProductForm(form);
     setFormErrors(nextErrors);
 
@@ -259,39 +386,78 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
       Boolean(nextErrors.name) ||
       Boolean(nextErrors.stock) ||
       Boolean(nextErrors.default_price) ||
-      Boolean(nextErrors.primary_image_url) ||
       Boolean(nextErrors.extraPrices && Object.keys(nextErrors.extraPrices).length > 0);
 
     if (hasErrors) {
       return;
     }
 
-    if (isCreate) {
-      await createMutation.mutateAsync(toProductCreatePayload(form));
-      return;
-    }
+    setIsSaving(true);
 
-    if (form.stock.trim() !== product!.stock.trim()) {
-      setStockReasonOpen(true);
-      return;
-    }
+    try {
+      if (isCreate) {
+        const createdProduct = await productsService.createProduct(toProductCreatePayload(form));
+        const uploads = await uploadPendingImagesForProduct(createdProduct.id);
 
-    await submitUpdate();
+        await queryClient.invalidateQueries({ queryKey: ["products"] });
+        await queryClient.invalidateQueries({ queryKey: ["product", createdProduct.id] });
+
+        const suffix = uploads.failed > 0 ? "&upload=partial" : "";
+        router.push(`/products/${createdProduct.id}?created=1${suffix}`);
+        return;
+      }
+
+      if (form.stock.trim() !== product!.stock.trim()) {
+        setStockReasonOpen(true);
+        return;
+      }
+
+      await submitUpdate();
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function submitUpdate(reason?: string) {
+    if (!product) {
+      return;
+    }
+
     const payload = toProductUpdatePayload(form);
 
-    if (form.stock.trim() !== product!.stock.trim()) {
+    if (form.stock.trim() !== product.stock.trim()) {
       payload.stock_adjust_reason = reason?.trim() ?? "";
     }
 
-    await updateMutation.mutateAsync(payload);
+    try {
+      const updatedProduct = await productsService.updateProduct(product.id, payload);
+      const uploads = await uploadPendingImagesForProduct(updatedProduct.id);
+
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      await queryClient.invalidateQueries({ queryKey: ["product", updatedProduct.id] });
+
+      const suffix = uploads.failed > 0 ? "&upload=partial" : "";
+      setSuccessMessage("Producto actualizado correctamente.");
+      router.push(`/products/${updatedProduct.id}?updated=1${suffix}`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setGeneralError(error.detail);
+        setFormErrors((current) => applyApiFieldErrors(current, error.fields));
+        const stockReasonFieldMessage = error.fields.stock_adjust_reason;
+        if (stockReasonFieldMessage) {
+          setStockReasonError(String(Array.isArray(stockReasonFieldMessage) ? stockReasonFieldMessage.join(" ") : stockReasonFieldMessage));
+          setStockReasonOpen(true);
+        }
+        return;
+      }
+
+      setGeneralError("No fue posible guardar el producto.");
+    }
   }
 
   async function handleConfirmStockReason() {
     if (!stockReason.trim()) {
-      setStockReasonError("Debes capturar una razón para modificar el stock.");
+      setStockReasonError("Debes capturar una razon para modificar el stock.");
       return;
     }
 
@@ -300,7 +466,59 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
     await submitUpdate(stockReason);
   }
 
-  const isSaving = createMutation.isPending || updateMutation.isPending;
+  async function handleDeleteProduct() {
+    if (!product) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setGeneralError(null);
+
+    try {
+      await productsService.deleteProduct(product.id);
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      await queryClient.invalidateQueries({ queryKey: ["product", product.id] });
+      setDeleteOpen(false);
+      router.push("/products?deleted=1");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setGeneralError(error.detail);
+      } else {
+        setGeneralError("No fue posible borrar el producto.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  async function handleToggleActive() {
+    if (!product) {
+      return;
+    }
+
+    setIsTogglingActive(true);
+    setGeneralError(null);
+
+    try {
+      const updatedProduct = await productsService.toggleActive(product.id, !product.is_active);
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      await queryClient.invalidateQueries({ queryKey: ["product", product.id] });
+      setToggleActiveOpen(false);
+      const action = product.is_active ? "desactivado" : "activado";
+      setSuccessMessage(`Producto ${action} correctamente.`);
+      router.push(`/products/${updatedProduct.id}?updated=1`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setGeneralError(error.detail);
+      } else {
+        setGeneralError("No fue posible cambiar el estado del producto.");
+      }
+    } finally {
+      setIsTogglingActive(false);
+    }
+  }
+
+  const isBusy = isSaving || isUploadingImages;
 
   return (
     <Stack spacing={3}>
@@ -319,8 +537,8 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
         title={isCreate ? "Nuevo producto" : "Editar producto"}
         description={
           isCreate
-            ? "Registra un nuevo producto en el catálogo con su inventario inicial y precios."
-            : "Actualiza datos de inventario, precios y metadatos del producto."
+            ? "Registra un nuevo producto en el catalogo con inventario inicial y precios."
+            : "Actualiza datos de inventario, precios y administra imagenes del producto."
         }
         action={
           <Button
@@ -440,7 +658,7 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
               fullWidth
             />
             <MoneyInput
-              label="Precio venta público"
+              label="Precio venta publico"
               value={form.default_price}
               onChange={(value) => updateField("default_price", value)}
               error={Boolean(formErrors.default_price)}
@@ -467,7 +685,7 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
               <Typography>
                 Precio compra + IVA 16%: {profitMetrics.costPriceWithTax === null ? "-" : formatCurrency(profitMetrics.costPriceWithTax)}
               </Typography>
-              <Typography>Precio venta público: {profitMetrics.salePrice === null ? "-" : formatCurrency(profitMetrics.salePrice)}</Typography>
+              <Typography>Precio venta publico: {profitMetrics.salePrice === null ? "-" : formatCurrency(profitMetrics.salePrice)}</Typography>
               <Typography>Utilidad en pesos: {profitMetrics.profitAmount === null ? "-" : formatCurrency(profitMetrics.profitAmount)}</Typography>
               <Typography>
                 Utilidad %: {profitMetrics.profitPercentage === null ? "-" : `${profitMetrics.profitPercentage.toFixed(2)}%`}
@@ -487,17 +705,97 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
             />
           ))}
 
-          <TextField
-            label="URL de imagen principal"
-            value={form.primary_image_url}
-            onChange={(event) => updateField("primary_image_url", event.target.value)}
-            error={Boolean(formErrors.primary_image_url)}
-            helperText={formErrors.primary_image_url ?? " "}
-            fullWidth
-          />
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                Imagenes del producto
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Formatos permitidos: JPG, PNG, WEBP. Maximo {(MEDIA_MAX_BYTES / (1024 * 1024)).toFixed(1)} MB y {MEDIA_MAX_DIMENSION}px por lado.
+              </Typography>
 
-          <Button variant="contained" onClick={handleSubmit} disabled={isSaving}>
-            {isSaving ? "Guardando..." : isCreate ? "Crear producto" : "Guardar cambios"}
+              {sortedExistingImages.length > 0 ? (
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+                  {sortedExistingImages.map((image) => (
+                    <Paper key={image.id} variant="outlined" sx={{ p: 1.25, width: 180 }}>
+                      <Stack spacing={1}>
+                        <Box
+                          component="img"
+                          src={image.thumb_url || image.original_url}
+                          alt="Imagen producto"
+                          sx={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 1 }}
+                        />
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                          {image.is_primary ? "Principal" : "Secundaria"}
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            size="small"
+                            variant={image.is_primary ? "contained" : "outlined"}
+                            disabled={Boolean(imageActionLoadingId) || !canMutateImageList || image.is_primary}
+                            onClick={() => void handleSetPrimaryImage(image.id)}
+                          >
+                            Primaria
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            disabled={Boolean(imageActionLoadingId) || !canMutateImageList}
+                            onClick={() => void handleDeleteImage(image.id)}
+                          >
+                            Borrar
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Aun no hay imagenes asociadas.
+                </Typography>
+              )}
+
+              <Button variant="outlined" component="label" disabled={isBusy}>
+                Seleccionar imagenes
+                <input
+                  hidden
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={(event) => {
+                    void handleSelectImages(event.target.files);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </Button>
+
+              {pendingImages.length > 0 ? (
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+                  {pendingImages.map((image) => (
+                    <Paper key={image.id} variant="outlined" sx={{ p: 1.25, width: 180 }}>
+                      <Stack spacing={1}>
+                        <Box component="img" src={image.previewUrl} alt={image.file.name} sx={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 1 }} />
+                        <Typography variant="caption" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {image.file.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {image.width}x{image.height}
+                        </Typography>
+                        <Button size="small" color="warning" variant="outlined" onClick={() => removePendingImage(image.id)} disabled={isBusy}>
+                          Quitar
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : null}
+            </Stack>
+          </Paper>
+
+          <Button variant="contained" onClick={() => void saveProductAndUploads()} disabled={isBusy}>
+            {isBusy ? "Guardando..." : isCreate ? "Crear producto" : "Guardar cambios"}
           </Button>
         </Stack>
       </Paper>
@@ -511,13 +809,13 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
               </Typography>
               <Typography color="text.secondary">
                 {product.is_active === false
-                  ? "Este producto está inactivo. No aparece en el POS ni en el catálogo público. Puedes reactivarlo en cualquier momento."
-                  : "Desactivar oculta el producto del POS y del catálogo público sin borrar historial de compras, ventas o movimientos de inventario."}
+                  ? "Este producto esta inactivo. No aparece en POS ni catalogo publico."
+                  : "Desactivar oculta el producto del POS y catalogo publico sin borrar historial."}
               </Typography>
               <Button
                 variant="outlined"
                 onClick={() => setToggleActiveOpen(true)}
-                disabled={toggleActiveMutation.isPending}
+                disabled={isTogglingActive}
                 sx={{
                   alignSelf: "flex-start",
                   borderColor: product.is_active === false ? "rgba(16, 185, 129, 0.4)" : "rgba(245, 158, 11, 0.4)",
@@ -533,13 +831,13 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
                 Zona de borrado
               </Typography>
               <Typography color="text.secondary">
-                Usa esta acción solo si el producto debe salir del catálogo operativo. El historial de compras y facturas debe permanecer intacto.
+                Usa esta accion solo si el producto debe salir del catalogo operativo.
               </Typography>
               <Button
                 color="error"
                 variant="outlined"
                 onClick={() => setDeleteOpen(true)}
-                disabled={!canDelete || deleteMutation.isPending}
+                disabled={!canDelete || isDeleting}
                 sx={{ alignSelf: "flex-start" }}
               >
                 Borrar producto
@@ -564,7 +862,7 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
         <>
           <Dialog
             open={toggleActiveOpen}
-            onClose={toggleActiveMutation.isPending ? undefined : () => setToggleActiveOpen(false)}
+            onClose={isTogglingActive ? undefined : () => setToggleActiveOpen(false)}
             maxWidth="sm"
             fullWidth
           >
@@ -574,21 +872,21 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
             <DialogContent>
               <DialogContentText>
                 {product.is_active === false
-                  ? `¿Confirmas que deseas reactivar "${product.name}"? Volverá a aparecer en el POS y catálogo público.`
-                  : `¿Confirmas que deseas desactivar "${product.name}"? Ya no aparecerá en el POS ni en el catálogo público. El historial de ventas, compras y movimientos se conserva.`}
+                  ? `Deseas reactivar "${product.name}"? Volvera a aparecer en POS y catalogo.`
+                  : `Deseas desactivar "${product.name}"? Se ocultara en POS y catalogo.`}
               </DialogContentText>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setToggleActiveOpen(false)} disabled={toggleActiveMutation.isPending}>
+              <Button onClick={() => setToggleActiveOpen(false)} disabled={isTogglingActive}>
                 Cancelar
               </Button>
               <Button
                 variant="contained"
-                onClick={() => void toggleActiveMutation.mutateAsync()}
-                disabled={toggleActiveMutation.isPending}
+                onClick={() => void handleToggleActive()}
+                disabled={isTogglingActive}
                 color={product.is_active === false ? "primary" : "warning"}
               >
-                {toggleActiveMutation.isPending ? "Procesando..." : product.is_active === false ? "Reactivar" : "Desactivar"}
+                {isTogglingActive ? "Procesando..." : product.is_active === false ? "Reactivar" : "Desactivar"}
               </Button>
             </DialogActions>
           </Dialog>
@@ -596,21 +894,21 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
           <ProductDeleteDialog
             open={deleteOpen}
             productName={product.name}
-            loading={deleteMutation.isPending}
+            loading={isDeleting}
             onClose={() => setDeleteOpen(false)}
             onConfirm={() => {
-              void deleteMutation.mutateAsync();
+              void handleDeleteProduct();
             }}
           />
 
-          <Dialog open={stockReasonOpen} onClose={updateMutation.isPending ? undefined : () => setStockReasonOpen(false)} maxWidth="sm" fullWidth>
+          <Dialog open={stockReasonOpen} onClose={isSaving ? undefined : () => setStockReasonOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle>Confirmar cambio de stock</DialogTitle>
             <DialogContent>
               <DialogContentText sx={{ mb: 2 }}>
-                {`Vas a cambiar el stock de ${product.stock} a ${form.stock}. Captura la razón para registrar el movimiento de inventario.`}
+                {`Vas a cambiar el stock de ${product.stock} a ${form.stock}. Captura la razon del ajuste.`}
               </DialogContentText>
               <TextField
-                label="Razón del ajuste"
+                label="Razon del ajuste"
                 value={stockReason}
                 onChange={(event) => {
                   setStockReason(event.target.value);
@@ -624,10 +922,10 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setStockReasonOpen(false)} disabled={updateMutation.isPending}>
+              <Button onClick={() => setStockReasonOpen(false)} disabled={isSaving}>
                 Cancelar
               </Button>
-              <Button variant="contained" onClick={() => void handleConfirmStockReason()} disabled={updateMutation.isPending}>
+              <Button variant="contained" onClick={() => void handleConfirmStockReason()} disabled={isSaving}>
                 Confirmar y guardar
               </Button>
             </DialogActions>
