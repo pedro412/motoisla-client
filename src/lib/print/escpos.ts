@@ -1,187 +1,228 @@
-import type { SaleResponse } from "@/lib/types/sales";
-import type { LayawayDetailResponse } from "@/lib/types/layaway";
+/**
+ * ESC/POS ticket builder.
+ * Generates raw byte arrays for Epson ESC/POS compatible thermal printers
+ * (POS80, Bixolon, Star Micronics, generic 80mm/58mm USB thermal printers).
+ *
+ * Diacritics are stripped (á→a, é→e, ñ→n, etc.) for safe ASCII transmission.
+ * For proper Unicode support, configure the printer's code page via ESC t.
+ */
 
-// ─── ESC/POS commands ──────────────────────────────────────────────────────────
+import type { LayawayDetailResponse } from "@/lib/types/layaway";
+import type { SaleResponse } from "@/lib/types/sales";
+
+// ─── ESC/POS command constants ─────────────────────────────────────────────────
+
 const ESC = 0x1b;
 const GS = 0x1d;
 const LF = 0x0a;
 
-const CMD_INIT = [ESC, 0x40];
-const CMD_ALIGN_LEFT = [ESC, 0x61, 0x00];
-const CMD_ALIGN_CENTER = [ESC, 0x61, 0x01];
-const CMD_BOLD_ON = [ESC, 0x45, 0x01];
-const CMD_BOLD_OFF = [ESC, 0x45, 0x00];
-const CMD_DOUBLE_HEIGHT = [ESC, 0x21, 0x10];
-const CMD_NORMAL_SIZE = [ESC, 0x21, 0x00];
-const CMD_CUT = [GS, 0x56, 0x42, 0x00]; // partial cut + feed
+const C = {
+  INIT:     Uint8Array.from([ESC, 0x40]),             // Initialize printer (reset)
+  ALIGN_L:  Uint8Array.from([ESC, 0x61, 0x00]),       // Left align
+  ALIGN_C:  Uint8Array.from([ESC, 0x61, 0x01]),       // Center align
+  BOLD_ON:  Uint8Array.from([ESC, 0x45, 0x01]),       // Bold on
+  BOLD_OFF: Uint8Array.from([ESC, 0x45, 0x00]),       // Bold off
+  DBL_ON:   Uint8Array.from([GS,  0x21, 0x11]),       // Double width + height
+  DBL_OFF:  Uint8Array.from([GS,  0x21, 0x00]),       // Normal size
+  // GS V 66 n  → feed n lines + partial cut
+  // We use n=3 here; extra LF are added before this command for safe margin.
+  CUT:      Uint8Array.from([GS,  0x56, 0x42, 0x03]), // Feed 3 lines + partial cut
+} as const;
 
-// ─── Config & helpers ──────────────────────────────────────────────────────────
+// Extra blank lines added before the cut so the last text isn't too close.
+const FEED_BEFORE_CUT = Uint8Array.from([LF, LF, LF, LF]);
+
+// ─── Config ────────────────────────────────────────────────────────────────────
+
 export interface TicketConfig {
   charWidth: number;
   storeAddress?: string;
   storePhone?: string;
-  // Layaway abono context
+  /** Explicit abono amount — used for type="abono" tickets to avoid relying on payment sort order. */
   abonoAmount?: number;
+  /** Explicit abono method — used for type="abono" tickets. */
   abonoMethod?: string;
 }
 
-function encode(str: string): number[] {
-  const out: number[] = [];
-  for (const ch of str) {
-    out.push(ch.charCodeAt(0) & 0xff);
-  }
+// ─── Low-level helpers ──────────────────────────────────────────────────────────
+
+function concat(...parts: Uint8Array[]): Uint8Array {
+  const len = parts.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(len);
+  let i = 0;
+  for (const p of parts) { out.set(p, i); i += p.length; }
   return out;
 }
 
-function money(value: string | number): string {
-  return `$${Number(value).toFixed(2)}`;
+/** Strip diacritics and non-printable-ASCII for thermal printer compatibility. */
+function sanitize(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")   // Remove combining diacritics (é→e, á→a)
+    .replace(/[ñ]/g, "n").replace(/[Ñ]/g, "N")
+    .replace(/[¡]/g, "!").replace(/[¿]/g, "?")
+    .replace(/[€]/g, "EUR")
+    .replace(/[^\x20-\x7e]/g, "?");   // Replace remaining non-ASCII with ?
 }
 
-function padLeft(str: string, len: number): string {
-  return str.length >= len ? str : " ".repeat(len - str.length) + str;
+function enc(s: string): Uint8Array {
+  return new TextEncoder().encode(sanitize(s));
 }
 
-function col2(left: string, right: string, width: number): string {
-  const gap = width - left.length - right.length;
-  if (gap <= 0) return left.slice(0, width - right.length - 1) + " " + right;
-  return left + " ".repeat(gap) + right;
+function row(s: string): Uint8Array {
+  return concat(enc(s), Uint8Array.from([LF]));
 }
 
-function separator(width: number): string {
-  return "-".repeat(width);
+function hr(w: number, ch = "="): Uint8Array {
+  return row(ch.repeat(w));
 }
 
-function formatDateTime(iso: string | null): string {
-  if (!iso) return "-";
+/** Center a string within `width` columns (truncates if too long). */
+function centerStr(s: string, width: number): string {
+  const safe = sanitize(s);
+  const text = safe.length > width ? safe.slice(0, width) : safe;
+  const pad = Math.max(0, Math.floor((width - text.length) / 2));
+  return " ".repeat(pad) + text;
+}
+
+// ─── Formatting helpers ─────────────────────────────────────────────────────────
+
+function money(v: number): string {
+  const [int, dec] = v.toFixed(2).split(".");
+  return "$" + int.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "." + dec;
+}
+
+function trunc(s: string, len: number): string {
+  return s.length > len ? s.slice(0, len) : s;
+}
+
+function methodLabel(m: string): string {
+  if (m === "CASH") return "Efectivo";
+  if (m === "CARD") return "Tarjeta";
+  if (m === "CUSTOMER_CREDIT") return "Saldo favor";
+  return m;
+}
+
+function fmtDate(s: string): string {
   return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  }).format(new Date(s));
 }
 
-function formatDate(iso: string): string {
+function fmtDateOnly(s: string): string {
   return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(iso));
+    day: "2-digit", month: "2-digit", year: "numeric",
+  }).format(new Date(s));
 }
 
-function paymentLabel(method: string, cardLabel?: string): string {
-  if (method === "CASH") return "Efectivo";
-  if (method === "CUSTOMER_CREDIT") return "Saldo a favor";
-  return cardLabel || "Tarjeta";
-}
+// ─── Shared footer builder ─────────────────────────────────────────────────────
 
-// ─── Builder ───────────────────────────────────────────────────────────────────
-class Builder {
-  private bytes: number[] = [];
-
-  cmd(...codes: number[]): this {
-    this.bytes.push(...codes);
-    return this;
-  }
-
-  text(str: string): this {
-    this.bytes.push(...encode(str));
-    return this;
-  }
-
-  line(str = ""): this {
-    return this.text(str).cmd(LF);
-  }
-
-  feed(n = 1): this {
-    return this.cmd(ESC, 0x64, n);
-  }
-
-  build(): Uint8Array {
-    return new Uint8Array(this.bytes);
-  }
-}
-
-// ─── Shared header & footer ────────────────────────────────────────────────────
-function buildHeader(b: Builder, storeName: string, subtitle: string, width: number): void {
-  b.cmd(...CMD_ALIGN_CENTER)
-    .cmd(...CMD_DOUBLE_HEIGHT)
-    .cmd(...CMD_BOLD_ON)
-    .line(storeName.slice(0, width))
-    .cmd(...CMD_BOLD_OFF)
-    .cmd(...CMD_NORMAL_SIZE)
-    .line(subtitle)
-    .line(separator(width));
-}
-
-export function buildFooter(b: Builder, config: TicketConfig): void {
+/** Produces the closing section: thank-you, optional store info, extra feed, cut. */
+function buildFooter(thankYou: string, config: TicketConfig): Uint8Array {
   const { charWidth, storeAddress, storePhone } = config;
-  b.cmd(...CMD_ALIGN_CENTER).feed(1).line("Gracias por su compra!");
-  if (storeAddress) b.line(storeAddress.slice(0, charWidth));
-  if (storePhone) b.line(`Tel: ${storePhone}`);
-  b.feed(4).cmd(...CMD_CUT);
-}
+  const hasInfo = (storeAddress?.trim() ?? "") !== "" || (storePhone?.trim() ?? "") !== "";
 
-// ─── Sale ticket ───────────────────────────────────────────────────────────────
-export function buildSaleTicketBytes(sale: SaleResponse, config: TicketConfig): Uint8Array {
-  const { charWidth } = config;
-  const b = new Builder();
+  const parts: Uint8Array[] = [
+    hr(charWidth),
+    C.ALIGN_C,
+    row(thankYou),
+  ];
 
-  b.cmd(...CMD_INIT);
-
-  buildHeader(b, "MOTO ISLA", "Ticket de venta", charWidth);
-
-  b.cmd(...CMD_ALIGN_LEFT);
-  b.line(`Fecha:   ${formatDateTime(sale.confirmed_at ?? sale.created_at)}`);
-  b.line(`Cajero:  ${sale.cashier_username}`);
-  if (sale.customer_summary) {
-    b.line(`Cliente: ${sale.customer_summary.name.slice(0, charWidth - 9)}`);
-    b.line(`Tel:     ${sale.customer_summary.phone}`);
-  } else {
-    b.line("Cliente: Mostrador");
-  }
-  b.line(separator(charWidth));
-
-  // Products
-  b.cmd(...CMD_BOLD_ON).line("PRODUCTOS:").cmd(...CMD_BOLD_OFF);
-  for (const line of sale.lines) {
-    const name = (line.product_name ?? line.product_sku ?? "Producto").slice(0, charWidth);
-    const qty = Number(line.qty);
-    const price = Number(line.unit_price);
-    const disc = Number(line.discount_pct);
-    const lineTotal = qty * price * (1 - disc / 100);
-    b.line(name);
-    const qtyStr = `  ${qty} x ${money(price)}`;
-    b.line(col2(qtyStr, money(lineTotal), charWidth));
-  }
-
-  b.line(separator(charWidth));
-
-  // Totals
-  b.line(col2("SUBTOTAL:", padLeft(money(sale.subtotal), 10), charWidth));
-  if (Number(sale.discount_amount) > 0) {
-    b.line(col2("DESCUENTO:", padLeft(money(sale.discount_amount), 10), charWidth));
-  }
-  b.cmd(...CMD_BOLD_ON)
-    .line(col2("TOTAL:", padLeft(money(sale.total), 10), charWidth))
-    .cmd(...CMD_BOLD_OFF);
-  b.line(separator(charWidth));
-
-  // Payments
-  for (const payment of sale.payments) {
-    const label = paymentLabel(payment.method, payment.card_plan_label);
-    b.line(col2(label, padLeft(money(payment.amount), 10), charWidth));
-    if (payment.method === "CARD" && payment.installments_months && payment.installments_months > 1) {
-      b.line(`  ${payment.installments_months} meses`);
+  if (hasInfo) {
+    parts.push(hr(charWidth, "-"));
+    if (storeAddress?.trim()) {
+      parts.push(row(centerStr(storeAddress.trim(), charWidth)));
+    }
+    if (storePhone?.trim()) {
+      parts.push(row(centerStr(`Tel: ${storePhone.trim()}`, charWidth)));
     }
   }
 
-  buildFooter(b, config);
-  return b.build();
+  parts.push(hr(charWidth));
+  parts.push(C.ALIGN_L);
+  parts.push(FEED_BEFORE_CUT);
+  parts.push(C.CUT);
+
+  return concat(...parts);
 }
 
-// ─── Layaway ticket ────────────────────────────────────────────────────────────
+// ─── Ticket builders ────────────────────────────────────────────────────────────
+
+export function buildSaleTicketBytes(
+  sale: SaleResponse,
+  changeDue: number,
+  config: TicketConfig,
+): Uint8Array {
+  const { charWidth } = config;
+  const nameLen = Math.max(8, charWidth - 22);
+  const date = fmtDate(sale.confirmed_at ?? sale.created_at);
+  const subtotal = Number(sale.subtotal);
+  const discount = Number(sale.discount_amount);
+  const total = Number(sale.total);
+
+  const parts: Uint8Array[] = [
+    C.INIT,
+    // Header
+    C.ALIGN_C, C.BOLD_ON, C.DBL_ON,
+    row("MOTO ISLA"),
+    C.DBL_OFF, C.BOLD_OFF,
+    row("TICKET DE VENTA"),
+    C.ALIGN_L,
+    hr(charWidth),
+    row(`Fecha:   ${date}`),
+    row(`Folio:   ${sale.id.slice(0, 12)}`),
+    row(`Cajero:  ${sale.cashier_username}`),
+  ];
+
+  if (sale.customer_summary) {
+    parts.push(hr(charWidth, "-"));
+    parts.push(row(`Cliente: ${sale.customer_summary.name}`));
+    parts.push(row(`Tel:     ${sale.customer_summary.phone}`));
+  }
+
+  // Products table
+  parts.push(hr(charWidth));
+  parts.push(row(`${"ARTICULO".padEnd(nameLen)} CAN    P.U.   TOTAL`));
+  parts.push(hr(charWidth, "-"));
+
+  for (const line of sale.lines) {
+    const name = trunc(line.product_name ?? line.product_sku ?? "Producto", nameLen);
+    const qty = String(Number(line.qty)).padStart(3);
+    const pu = money(Number(line.unit_price));
+    const lt = Number(line.qty) * Number(line.unit_price) * (1 - Number(line.discount_pct) / 100);
+    parts.push(row(`${name.padEnd(nameLen)} ${qty} ${pu.padStart(8)} ${money(lt).padStart(8)}`));
+  }
+
+  // Totals
+  parts.push(hr(charWidth, "-"));
+  parts.push(row(`Subtotal:${money(subtotal).padStart(charWidth - 9)}`));
+  if (discount > 0) {
+    parts.push(row(`Descuento:${money(discount).padStart(charWidth - 10)}`));
+  }
+  parts.push(C.BOLD_ON);
+  parts.push(row(`TOTAL:${money(total).padStart(charWidth - 6)}`));
+  parts.push(C.BOLD_OFF);
+  parts.push(hr(charWidth));
+
+  // Payments
+  for (const p of sale.payments) {
+    const label =
+      p.method === "CARD" && p.card_plan_label
+        ? `${methodLabel(p.method)} (${p.card_plan_label})`
+        : methodLabel(p.method);
+    parts.push(row(`${label.padEnd(charWidth - 10)}${money(Number(p.amount)).padStart(10)}`));
+  }
+
+  if (changeDue > 0) {
+    parts.push(row(`Cambio:${money(changeDue).padStart(charWidth - 7)}`));
+  }
+
+  parts.push(buildFooter("!Gracias por su visita!", config));
+
+  return concat(...parts);
+}
+
 export type LayawayTicketType = "created" | "abono" | "liquidated";
 
 export function buildLayawayTicketBytes(
@@ -189,80 +230,112 @@ export function buildLayawayTicketBytes(
   type: LayawayTicketType,
   config: TicketConfig,
 ): Uint8Array {
-  const { charWidth, abonoAmount, abonoMethod } = config;
-  const b = new Builder();
+  const { charWidth } = config;
+  const nameLen = Math.max(8, charWidth - 22);
+  const date = fmtDate(layaway.updated_at ?? layaway.created_at);
+  const vence = fmtDateOnly(layaway.expires_at);
 
-  b.cmd(...CMD_INIT);
-
-  const subtitleMap: Record<LayawayTicketType, string> = {
-    created: "Apartado creado",
-    abono: "Abono registrado",
-    liquidated: "Apartado liquidado",
+  const titleMap: Record<LayawayTicketType, string> = {
+    created:    "COMPROBANTE DE APARTADO",
+    abono:      "COMPROBANTE DE ABONO",
+    liquidated: "APARTADO LIQUIDADO",
   };
-  buildHeader(b, "MOTO ISLA", subtitleMap[type], charWidth);
 
-  b.cmd(...CMD_ALIGN_LEFT);
-  b.line(`Fecha:   ${formatDateTime(layaway.created_at)}`);
-  b.line(`Cliente: ${(layaway.customer_name ?? "").slice(0, charWidth - 9)}`);
-  b.line(`Tel:     ${layaway.customer_phone}`);
-  if (type !== "liquidated") {
-    b.line(`Vence:   ${formatDate(layaway.expires_at)}`);
+  const parts: Uint8Array[] = [
+    C.INIT,
+    C.ALIGN_C, C.BOLD_ON, C.DBL_ON,
+    row("MOTO ISLA"),
+    C.DBL_OFF, C.BOLD_OFF,
+    row(titleMap[type]),
+    C.ALIGN_L,
+    hr(charWidth),
+    row(`Fecha:   ${date}`),
+    row(`Folio:   ${layaway.id.slice(0, 12)}`),
+    hr(charWidth, "-"),
+    row(`Cliente: ${layaway.customer_name}`),
+    row(`Tel:     ${layaway.customer_phone}`),
+    hr(charWidth),
+  ];
+
+  // Products table (not for "abono")
+  if (type !== "abono") {
+    parts.push(row(`${"ARTICULO".padEnd(nameLen)} CAN    P.U.   TOTAL`));
+    parts.push(hr(charWidth, "-"));
+    for (const line of layaway.lines) {
+      const name = trunc(line.product_name ?? line.product_sku ?? "Producto", nameLen);
+      const qty = String(Number(line.qty)).padStart(3);
+      const pu = money(Number(line.unit_price));
+      const lt = Number(line.qty) * Number(line.unit_price) * (1 - Number(line.discount_pct) / 100);
+      parts.push(row(`${name.padEnd(nameLen)} ${qty} ${pu.padStart(8)} ${money(lt).padStart(8)}`));
+    }
+    parts.push(hr(charWidth));
   }
-  b.line(separator(charWidth));
-
-  // Products
-  b.cmd(...CMD_BOLD_ON).line("PRODUCTOS:").cmd(...CMD_BOLD_OFF);
-  for (const line of layaway.lines) {
-    const name = (line.product_name ?? line.product_sku ?? "Producto").slice(0, charWidth);
-    b.line(name);
-    const qty = Number(line.qty);
-    const price = Number(line.unit_price);
-    const lineTotal = qty * price;
-    b.line(col2(`  ${qty} x ${money(price)}`, money(lineTotal), charWidth));
-  }
-
-  b.line(separator(charWidth));
-  b.line(col2("TOTAL APARTADO:", padLeft(money(layaway.total_price ?? layaway.total), 10), charWidth));
 
   if (type === "created") {
-    b.line(col2("ABONO INICIAL:", padLeft(money(layaway.deposit_amount), 10), charWidth));
-    b.line(col2("SALDO PENDIENTE:", padLeft(money(layaway.balance_due), 10), charWidth));
-  } else if (type === "abono" && abonoAmount !== undefined) {
-    b.line(separator(charWidth));
-    b.cmd(...CMD_BOLD_ON)
-      .line(col2("ABONO:", padLeft(money(abonoAmount), 10), charWidth))
-      .cmd(...CMD_BOLD_OFF);
-    if (abonoMethod) {
-      b.line(`Método: ${paymentLabel(abonoMethod)}`);
-    }
-    b.line(col2("TOTAL PAGADO:", padLeft(money(layaway.amount_paid), 10), charWidth));
-    b.line(col2("SALDO PENDIENTE:", padLeft(money(layaway.balance_due), 10), charWidth));
-  } else if (type === "liquidated") {
-    b.cmd(...CMD_BOLD_ON).line("** APARTADO LIQUIDADO **").cmd(...CMD_BOLD_OFF);
+    parts.push(row(`Total apartado:${money(Number(layaway.total)).padStart(charWidth - 15)}`));
+    parts.push(row(`Deposito pagado:${money(Number(layaway.deposit_amount)).padStart(charWidth - 16)}`));
+    parts.push(row(`Saldo pendiente:${money(Number(layaway.balance_due)).padStart(charWidth - 16)}`));
+    parts.push(row(`Vence:${vence.padStart(charWidth - 6)}`));
+    parts.push(buildFooter("Conserve este comprobante", config));
   }
 
-  buildFooter(b, config);
-  return b.build();
+  if (type === "abono") {
+    const amt = config.abonoAmount ?? 0;
+    const meth = config.abonoMethod ?? "";
+
+    parts.push(C.BOLD_ON);
+    parts.push(row(`Abono registrado:${money(amt).padStart(charWidth - 17)}`));
+    parts.push(C.BOLD_OFF);
+    parts.push(row(`  ${methodLabel(meth).padEnd(charWidth - 12)}${money(amt).padStart(10)}`));
+    parts.push(hr(charWidth, "-"));
+    parts.push(row(`Total apartado:${money(Number(layaway.total)).padStart(charWidth - 15)}`));
+    parts.push(row(`Total pagado:${money(Number(layaway.amount_paid)).padStart(charWidth - 13)}`));
+    parts.push(C.BOLD_ON);
+    parts.push(row(`Saldo pendiente:${money(Number(layaway.balance_due)).padStart(charWidth - 16)}`));
+    parts.push(C.BOLD_OFF);
+    parts.push(row(`Vence:${vence.padStart(charWidth - 6)}`));
+    parts.push(buildFooter("Conserve este comprobante", config));
+  }
+
+  if (type === "liquidated") {
+    parts.push(row(`Total:${money(Number(layaway.total)).padStart(charWidth - 6)}`));
+    parts.push(C.BOLD_ON);
+    parts.push(row(`PAGADO:${money(Number(layaway.amount_paid)).padStart(charWidth - 7)}`));
+    parts.push(C.BOLD_OFF);
+    parts.push(row(`Estado:${"LIQUIDADO".padStart(charWidth - 7)}`));
+    parts.push(buildFooter("!Gracias por su compra!", config));
+  }
+
+  return concat(...parts);
 }
 
-// ─── Test ticket ───────────────────────────────────────────────────────────────
 export function buildTestTicketBytes(config: TicketConfig): Uint8Array {
   const { charWidth } = config;
-  const b = new Builder();
+  const nameLen = Math.max(8, charWidth - 22);
+  const now = new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  }).format(new Date());
 
-  b.cmd(...CMD_INIT);
-  buildHeader(b, "MOTO ISLA", "Ticket de prueba", charWidth);
-
-  b.cmd(...CMD_ALIGN_LEFT)
-    .line(`Ancho: ${charWidth} caracteres`)
-    .line(`Fecha: ${formatDateTime(new Date().toISOString())}`)
-    .line(separator(charWidth));
-
-  b.cmd(...CMD_BOLD_ON).line("123456789012345678901234567890123456789012345678").cmd(...CMD_BOLD_OFF);
-  b.line("|" + "-".repeat(charWidth - 2) + "|");
-  b.line(col2("Columna izquierda", "Derecha", charWidth));
-  b.line(separator(charWidth));
-
-  buildFooter(b, config);
-  return b.build();
+  return concat(
+    C.INIT,
+    C.ALIGN_C, C.BOLD_ON, C.DBL_ON, row("MOTO ISLA"), C.DBL_OFF, C.BOLD_OFF,
+    row("TICKET DE PRUEBA"),
+    C.ALIGN_L,
+    hr(charWidth),
+    row(`Fecha:   ${now}`),
+    row(`Ancho:   ${charWidth} columnas`),
+    row(`Papel:   ${charWidth <= 32 ? "58 mm" : "80 mm"}`),
+    hr(charWidth, "-"),
+    row(`${"ARTICULO".padEnd(nameLen)} CAN    P.U.   TOTAL`),
+    hr(charWidth, "-"),
+    row(`${"Aceite Motor 10W".padEnd(nameLen)}   1  $150.00  $150.00`),
+    row(`${"Filtro Aire".padEnd(nameLen)}   2   $80.00  $160.00`),
+    hr(charWidth, "-"),
+    C.BOLD_ON, row(`TOTAL:${money(310).padStart(charWidth - 6)}`), C.BOLD_OFF,
+    hr(charWidth),
+    row(`Efectivo${money(400).padStart(charWidth - 8)}`),
+    row(`Cambio:${money(90).padStart(charWidth - 7)}`),
+    buildFooter("!Impresora lista!", config),
+  );
 }

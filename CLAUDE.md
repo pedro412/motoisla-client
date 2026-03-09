@@ -111,6 +111,8 @@ Key points:
 | Path | Description |
 |---|---|
 | `/login` | Auth |
+| `/recuperar-cuenta` | Password reset request |
+| `/restablecer-contrasena` | Password reset confirm (uid+token) |
 | `/pos` | POS — create + confirm sale |
 | `/ventas` | Sales history list |
 | `/ventas/[id]` | Sale detail |
@@ -128,6 +130,7 @@ Key points:
 | `/investors/[id]` | Investor detail + ledger |
 | `/expenses` | Expenses list |
 | `/admin/reports` | Sales reports (admin only) |
+| `/admin/users` | User management (admin only) |
 | `/settings/printer` | USB printer config |
 | `/catalog` | Public product catalog (no auth) |
 | `/catalog/[sku]` | Public product detail |

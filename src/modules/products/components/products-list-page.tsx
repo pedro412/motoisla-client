@@ -22,7 +22,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -125,12 +124,6 @@ export function ProductsListPage() {
   const inactiveProducts = sortedProducts.filter((product) => product.is_active === false).length;
   const brandOptions = brandsQuery.data?.results ?? [];
   const typeOptions = productTypesQuery.data?.results ?? [];
-
-  const tableHeaderCellSx = {
-    backgroundColor: "rgba(15, 23, 42, 0.38)",
-    borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
-    py: 1.5,
-  } as const;
 
   const errorMessage = useMemo(() => {
     if (!productsQuery.error) {
@@ -382,28 +375,6 @@ export function ProductsListPage() {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Nombre o SKU"
             fullWidth
-            sx={{
-              "& .MuiInputLabel-root": {
-                color: "rgba(226, 232, 240, 0.72)",
-              },
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#bfdbfe",
-              },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 3,
-                backgroundColor: "rgba(15, 23, 42, 0.36)",
-                color: "#f8fafc",
-                "& fieldset": {
-                  borderColor: "rgba(148, 163, 184, 0.18)",
-                },
-                "&:hover fieldset": {
-                  borderColor: "rgba(148, 163, 184, 0.28)",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "rgba(96, 165, 250, 0.52)",
-                },
-              },
-            }}
           />
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
@@ -423,28 +394,6 @@ export function ProductsListPage() {
                   {...params}
                   label="Filtrar por marca"
                   placeholder="Todas"
-                  sx={{
-                    "& .MuiInputLabel-root": {
-                      color: "rgba(226, 232, 240, 0.72)",
-                    },
-                    "& .MuiInputLabel-root.Mui-focused": {
-                      color: "#bfdbfe",
-                    },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 3,
-                      backgroundColor: "rgba(15, 23, 42, 0.36)",
-                      color: "#f8fafc",
-                      "& fieldset": {
-                        borderColor: "rgba(148, 163, 184, 0.18)",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "rgba(148, 163, 184, 0.28)",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "rgba(96, 165, 250, 0.52)",
-                      },
-                    },
-                  }}
                 />
               )}
               fullWidth
@@ -466,28 +415,6 @@ export function ProductsListPage() {
                   {...params}
                   label="Filtrar por tipo / categoria"
                   placeholder="Todas"
-                  sx={{
-                    "& .MuiInputLabel-root": {
-                      color: "rgba(226, 232, 240, 0.72)",
-                    },
-                    "& .MuiInputLabel-root.Mui-focused": {
-                      color: "#bfdbfe",
-                    },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 3,
-                      backgroundColor: "rgba(15, 23, 42, 0.36)",
-                      color: "#f8fafc",
-                      "& fieldset": {
-                        borderColor: "rgba(148, 163, 184, 0.18)",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "rgba(148, 163, 184, 0.28)",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "rgba(96, 165, 250, 0.52)",
-                      },
-                    },
-                  }}
                 />
               )}
               fullWidth
@@ -516,49 +443,40 @@ export function ProductsListPage() {
                 backdropFilter: "blur(6px)",
               }}
             >
-              <Table
-                sx={{
-                  minWidth: 760,
-                  backgroundColor: "transparent",
-                  "& .MuiTableCell-root": {
-                    backgroundColor: "transparent",
-                    color: "#e2e8f0",
-                  },
-                }}
-              >
+              <Table sx={{ minWidth: 760 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         Imagen
                       </Typography>
                     </TableCell>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         SKU
                       </Typography>
                     </TableCell>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         Nombre
                       </Typography>
                     </TableCell>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         Stock
                       </Typography>
                     </TableCell>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         Precio
                       </Typography>
                     </TableCell>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         Actualizado
                       </Typography>
                     </TableCell>
-                    <TableCell sx={tableHeaderCellSx}>
+                    <TableCell>
                       <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                         Estatus
                       </Typography>
@@ -571,17 +489,7 @@ export function ProductsListPage() {
                       key={product.id}
                       hover
                       onClick={() => router.push(`/products/${product.id}`)}
-                      sx={{
-                        cursor: "pointer",
-                        transition: "background-color 160ms ease, transform 160ms ease",
-                        "&:hover": {
-                          backgroundColor: alpha("#60a5fa", 0.08),
-                        },
-                        "& > .MuiTableCell-root": {
-                          borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
-                          py: 1.6,
-                        },
-                      }}
+                      sx={{ cursor: "pointer" }}
                     >
                       <TableCell>
                         <Avatar
@@ -591,7 +499,7 @@ export function ProductsListPage() {
                             width: 44,
                             height: 44,
                             fontWeight: 900,
-                            bgcolor: alpha("#1d4ed8", 0.12),
+                            bgcolor: "rgba(29, 78, 216, 0.12)",
                             color: "#1d4ed8",
                             border: "1px solid rgba(29, 78, 216, 0.18)",
                           }}
