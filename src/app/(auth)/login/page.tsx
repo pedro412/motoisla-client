@@ -1,6 +1,7 @@
 "use client";
 
-import { Alert, Button, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, CircularProgress, Link as MuiLink, Paper, Stack, TextField, Typography } from "@mui/material";
+import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
@@ -63,6 +64,10 @@ export default function LoginPage() {
         <Button type="submit" variant="contained" size="large" disabled={submitting}>
           {submitting ? <CircularProgress size={22} color="inherit" /> : "Entrar"}
         </Button>
+
+        <MuiLink component={NextLink} href="/recuperar-cuenta" variant="body2" sx={{ textAlign: "center" }}>
+          ¿Olvidaste tu contraseña?
+        </MuiLink>
       </Stack>
     </Paper>
   );

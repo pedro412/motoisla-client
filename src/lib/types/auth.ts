@@ -5,3 +5,13 @@ export interface AuthSession {
   role?: Role;
   username?: string;
 }
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetConfirm {
+  uid: string;
+  token: string;
+  new_password: string;
+}

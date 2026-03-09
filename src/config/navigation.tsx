@@ -6,6 +6,7 @@ import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 
 import type { AppNavItem } from "@/types/navigation";
@@ -73,6 +74,14 @@ export const privateNavItems: AppNavItem[] = [
     href: "/investors",
     icon: <AccountBalanceWalletRoundedIcon fontSize="small" />,
     module: "investors",
+    requiredRoles: ["ADMIN"],
+  },
+  {
+    key: "users",
+    label: "Usuarios",
+    href: "/admin/users",
+    icon: <PeopleRoundedIcon fontSize="small" />,
+    module: "admin",
     requiredRoles: ["ADMIN"],
   },
   {

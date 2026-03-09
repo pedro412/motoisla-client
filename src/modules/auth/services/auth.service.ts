@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api/errors";
-import type { AuthSession } from "@/lib/types/auth";
+import { httpClient } from "@/lib/api/http-client";
+import type { AuthSession, PasswordResetConfirm, PasswordResetRequest } from "@/lib/types/auth";
 
 interface LoginResponse {
   session: AuthSession;
@@ -50,5 +51,13 @@ export const authService = {
     });
     const payload = await parseResponse<{ session: AuthSession }>(response);
     return payload.session;
+  },
+
+  async requestPasswordReset(data: PasswordResetRequest) {
+    return httpClient.post<PasswordResetRequest, { detail: string }>("/auth/password-reset/", data);
+  },
+
+  async confirmPasswordReset(data: PasswordResetConfirm) {
+    return httpClient.post<PasswordResetConfirm, { detail: string }>("/auth/password-reset-confirm/", data);
   },
 };
