@@ -46,7 +46,6 @@ export function AppSidebar({ navItems, mobileOpen, onMobileClose }: AppSidebarPr
               href={item.href}
               selected={isSelected}
               onClick={onMobileClose}
-              sx={{ borderRadius: 1.5, mb: 0.5 }}
             >
               <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />

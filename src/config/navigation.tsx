@@ -76,11 +76,11 @@ export const privateNavItems: AppNavItem[] = [
     requiredRoles: ["ADMIN"],
   },
   {
-    key: "printer",
+    key: "settings-printer",
     label: "Impresora",
     href: "/settings/printer",
     icon: <PrintRoundedIcon fontSize="small" />,
     module: "settings",
-    requiredRoles: ["ADMIN", "CASHIER"],
+    requiredRoles: ["ADMIN"],
   },
 ];
