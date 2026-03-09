@@ -37,4 +37,16 @@ export interface ProductUpdatePayload {
   [key: string]: string | null | undefined;
 }
 
+export interface ProductCreatePayload {
+  sku: string;
+  name: string;
+  default_price: string;
+  cost_price?: string | null;
+  brand?: string | null;
+  product_type?: string | null;
+  stock?: string;
+  stock_adjust_reason?: string;
+  primary_image_url?: string | null;
+}
+
 export type ProductListResponse = PaginatedResponse<ProductListItem>;

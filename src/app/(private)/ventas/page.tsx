@@ -11,8 +11,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Pagination,
   Paper,
+  Select,
   Stack,
   Table,
   TableBody,
@@ -32,60 +34,54 @@ import { salesService } from "@/modules/sales/services/sales.service";
 
 const pageSize = 20;
 
+interface Filters {
+  dateFrom: string;
+  dateTo: string;
+  status: string;
+  cashier: string;
+}
+
+const emptyFilters: Filters = { dateFrom: "", dateTo: "", status: "", cashier: "" };
+
 function formatMoney(value: string | number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(value));
 }
 
 function formatDateTime(value: string | null) {
-  if (!value) {
-    return "Sin fecha";
-  }
+  if (!value) return "Sin fecha";
   const date = new Date(value);
   const now = new Date();
   const isToday =
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
-
   if (isToday) {
     return `Hoy, ${new Intl.DateTimeFormat("es-MX", { timeStyle: "short" }).format(date)}`;
   }
-
-  return new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+  return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function formatPaymentLabel(payment: SaleHistoryPayment) {
-  if (payment.method === "CASH") {
-    return `Efectivo ${formatMoney(payment.amount)}`;
-  }
-  if (payment.method === "CUSTOMER_CREDIT") {
-    return `Saldo a favor ${formatMoney(payment.amount)}`;
-  }
+  if (payment.method === "CASH") return `Efectivo ${formatMoney(payment.amount)}`;
+  if (payment.method === "CUSTOMER_CREDIT") return `Saldo a favor ${formatMoney(payment.amount)}`;
   const suffix = payment.card_plan_label || "Tarjeta";
   return `${suffix} ${formatMoney(payment.amount)}`;
 }
 
 function statusColor(status: SaleHistoryItem["status"]) {
-  if (status === "CONFIRMED") {
-    return "success";
-  }
-  if (status === "VOID") {
-    return "error";
-  }
+  if (status === "CONFIRMED") return "success";
+  if (status === "VOID") return "error";
   return "default";
 }
 
 function statusLabel(status: SaleHistoryItem["status"]) {
-  if (status === "CONFIRMED") {
-    return "Confirmada";
-  }
-  if (status === "VOID") {
-    return "Cancelada";
-  }
+  if (status === "CONFIRMED") return "Confirmada";
+  if (status === "VOID") return "Cancelada";
   return "Borrador";
+}
+
+function hasActiveFilters(f: Filters) {
+  return f.dateFrom !== "" || f.dateTo !== "" || f.status !== "" || f.cashier !== "";
 }
 
 export default function SalesHistoryPage() {
@@ -96,29 +92,45 @@ export default function SalesHistoryPage() {
   const [voidReason, setVoidReason] = useState("");
   const [isVoiding, setIsVoiding] = useState(false);
 
+  // draft = lo que el usuario escribe; applied = lo que se envía al backend
+  const [draft, setDraft] = useState<Filters>(emptyFilters);
+  const [applied, setApplied] = useState<Filters>(emptyFilters);
+
+  function applyFilters() {
+    setPage(1);
+    setApplied(draft);
+  }
+
+  function clearFilters() {
+    setDraft(emptyFilters);
+    setApplied(emptyFilters);
+    setPage(1);
+  }
+
   const salesQuery = useQuery({
-    queryKey: ["sales-history", page],
-    queryFn: () => salesService.listSales({ page }),
+    queryKey: ["sales-history", page, applied],
+    queryFn: () =>
+      salesService.listSales({
+        page,
+        date_from: applied.dateFrom || undefined,
+        date_to: applied.dateTo || undefined,
+        status: applied.status || undefined,
+        cashier: applied.cashier || undefined,
+      }),
   });
 
   const totalPages = useMemo(() => {
-    if (!salesQuery.data) {
-      return 1;
-    }
+    if (!salesQuery.data) return 1;
     return Math.max(1, Math.ceil(salesQuery.data.count / pageSize));
   }, [salesQuery.data]);
 
   async function submitVoid() {
-    if (!voidTarget) {
-      return;
-    }
-
+    if (!voidTarget) return;
     const reason = voidReason.trim();
     if (!reason) {
       setErrorMessage("Debes capturar el motivo de cancelación.");
       return;
     }
-
     setIsVoiding(true);
     setErrorMessage(null);
     try {
@@ -141,6 +153,66 @@ export default function SalesHistoryPage() {
     <Stack spacing={3}>
       <Typography variant="h4">Ventas</Typography>
 
+      {/* Filtros */}
+      <Paper sx={{ p: 2, borderRadius: 3 }}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "flex-end" }} flexWrap="wrap">
+          <TextField
+            label="Desde"
+            type="date"
+            size="small"
+            value={draft.dateFrom}
+            onChange={(e) => setDraft((prev) => ({ ...prev, dateFrom: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150 }}
+          />
+          <TextField
+            label="Hasta"
+            type="date"
+            size="small"
+            value={draft.dateTo}
+            onChange={(e) => setDraft((prev) => ({ ...prev, dateTo: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150 }}
+          />
+          <Select
+            displayEmpty
+            size="small"
+            value={draft.status}
+            onChange={(e) => setDraft((prev) => ({ ...prev, status: e.target.value }))}
+            sx={{ minWidth: 150 }}
+          >
+            <MenuItem value="">Todos los estatus</MenuItem>
+            <MenuItem value="CONFIRMED">Confirmada</MenuItem>
+            <MenuItem value="VOID">Cancelada</MenuItem>
+            <MenuItem value="DRAFT">Borrador</MenuItem>
+          </Select>
+          <TextField
+            label="Cajero"
+            size="small"
+            placeholder="usuario..."
+            value={draft.cashier}
+            onChange={(e) => setDraft((prev) => ({ ...prev, cashier: e.target.value }))}
+            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+            sx={{ minWidth: 160 }}
+          />
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" size="small" onClick={applyFilters} sx={{ fontWeight: 700 }}>
+              Buscar
+            </Button>
+            {hasActiveFilters(applied) && (
+              <Button variant="outlined" size="small" onClick={clearFilters}>
+                Limpiar
+              </Button>
+            )}
+          </Stack>
+        </Stack>
+        {hasActiveFilters(applied) && (
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: "block" }}>
+            {salesQuery.data ? `${salesQuery.data.count} resultado${salesQuery.data.count !== 1 ? "s" : ""}` : "Buscando…"}
+          </Typography>
+        )}
+      </Paper>
+
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
       {salesQuery.isLoading ? (
@@ -154,7 +226,9 @@ export default function SalesHistoryPage() {
       ) : null}
 
       {!salesQuery.isLoading && salesQuery.data && salesQuery.data.results.length === 0 ? (
-        <Alert severity="info">Todavía no hay ventas registradas.</Alert>
+        <Alert severity="info">
+          {hasActiveFilters(applied) ? "No hay ventas que coincidan con los filtros." : "Todavía no hay ventas registradas."}
+        </Alert>
       ) : null}
 
       {salesQuery.data?.results.length ? (
@@ -181,9 +255,7 @@ export default function SalesHistoryPage() {
                     onClick={() => router.push(`/ventas/${sale.id}`)}
                     sx={{
                       cursor: "pointer",
-                      "& > .MuiTableCell-root": {
-                        transition: "background-color 120ms ease",
-                      },
+                      "& > .MuiTableCell-root": { transition: "background-color 120ms ease" },
                     }}
                   >
                     <TableCell sx={{ whiteSpace: "nowrap" }}>
@@ -219,9 +291,7 @@ export default function SalesHistoryPage() {
                           {sale.void_reason}
                         </Typography>
                       ) : (
-                        <Typography color="text.secondary" variant="body2">
-                          -
-                        </Typography>
+                        <Typography color="text.secondary" variant="body2">-</Typography>
                       )}
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
@@ -241,9 +311,7 @@ export default function SalesHistoryPage() {
                           Cancelar
                         </Button>
                       ) : (
-                        <Typography color="text.secondary" variant="body2">
-                          -
-                        </Typography>
+                        <Typography color="text.secondary" variant="body2">-</Typography>
                       )}
                     </TableCell>
                   </TableRow>
@@ -261,9 +329,7 @@ export default function SalesHistoryPage() {
       <Dialog
         open={Boolean(voidTarget)}
         onClose={() => {
-          if (isVoiding) {
-            return;
-          }
+          if (isVoiding) return;
           setVoidTarget(null);
           setVoidReason("");
         }}
@@ -290,9 +356,7 @@ export default function SalesHistoryPage() {
         <DialogActions>
           <Button
             onClick={() => {
-              if (isVoiding) {
-                return;
-              }
+              if (isVoiding) return;
               setVoidTarget(null);
               setVoidReason("");
             }}

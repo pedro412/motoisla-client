@@ -79,6 +79,19 @@ export interface InvestorPurchaseResponse {
   ledger_entries: InvestorLedgerEntry[];
 }
 
+export interface InvestorLedgerTotals {
+  capital_total: string;
+  inventory_total: string;
+  profit_total: string;
+}
+
+export interface InvestorLedgerFilters {
+  entry_type?: InvestorLedgerEntryType;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+}
+
 export type InvestorsListResponse = PaginatedResponse<InvestorSummary>;
 export type InvestorAssignmentsResponse = PaginatedResponse<InvestorAssignmentItem>;
-export type InvestorLedgerResponse = PaginatedResponse<InvestorLedgerEntry>;
+export type InvestorLedgerResponse = PaginatedResponse<InvestorLedgerEntry> & { totals?: InvestorLedgerTotals };

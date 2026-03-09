@@ -1,4 +1,4 @@
-import type { ProductDetail, ProductListItem, ProductUpdatePayload } from "@/lib/types/products";
+import type { ProductCreatePayload, ProductDetail, ProductListItem, ProductUpdatePayload } from "@/lib/types/products";
 
 export interface ProductFormState {
   sku: string;
@@ -168,6 +168,21 @@ export function getAdditionalPriceKeys(product: ProductDetail | null | undefined
     .sort((left, right) => left.localeCompare(right));
 }
 
+export function createEmptyProductFormState(): ProductFormState {
+  return {
+    sku: "",
+    name: "",
+    stock: "0",
+    default_price: "",
+    brand: null,
+    brand_name: "",
+    product_type: null,
+    product_type_name: "",
+    primary_image_url: "",
+    extraPrices: { cost_price: "" },
+  };
+}
+
 export function createProductFormState(product: ProductDetail): ProductFormState {
   const costPriceKey = getCostPriceFieldKey(product);
   const extraPriceKeys = new Set([...getAdditionalPriceKeys(product), costPriceKey]);
@@ -325,6 +340,30 @@ export function applyApiFieldErrors(errors: ProductFormErrors, fields: Record<st
   }
 
   return nextErrors;
+}
+
+export function toProductCreatePayload(form: ProductFormState): ProductCreatePayload {
+  const payload: ProductCreatePayload = {
+    sku: form.sku.trim(),
+    name: form.name.trim(),
+    default_price: normalizeMoneyInput(form.default_price.trim()),
+    brand: form.brand,
+    product_type: form.product_type,
+    primary_image_url: form.primary_image_url.trim() ? form.primary_image_url.trim() : null,
+  };
+
+  const costPrice = form.extraPrices.cost_price?.trim();
+  if (costPrice) {
+    payload.cost_price = normalizeMoneyInput(costPrice);
+  }
+
+  const stock = form.stock.trim();
+  if (stock && Number(stock) > 0) {
+    payload.stock = stock;
+    payload.stock_adjust_reason = "Inventario inicial";
+  }
+
+  return payload;
 }
 
 export function toProductUpdatePayload(form: ProductFormState): ProductUpdatePayload {

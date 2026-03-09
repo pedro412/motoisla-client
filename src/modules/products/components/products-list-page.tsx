@@ -5,6 +5,7 @@ import {
   Autocomplete,
   Avatar,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Divider,
@@ -27,8 +28,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
 import { productsService } from "@/modules/products/services/products.service";
+import { reportsService } from "@/modules/reports/services/reports.service";
 import { taxonomyService } from "@/modules/taxonomy/services/taxonomy.service";
 import { formatCurrency, formatDateTime, sortProductsForDisplay } from "@/modules/products/utils";
+import { useSessionStore } from "@/store/session-store";
+
+const IVA_RATE = 0.16;
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -52,7 +57,9 @@ export function ProductsListPage() {
   const [typeSearch, setTypeSearch] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<{ id: string; name: string } | null>(null);
   const [selectedType, setSelectedType] = useState<{ id: string; name: string } | null>(null);
+  const { session } = useSessionStore();
   const [snackbarOpen, setSnackbarOpen] = useState(searchParams.get("deleted") === "1");
+  const [createdSnackbarOpen, setCreatedSnackbarOpen] = useState(searchParams.get("created") === "1");
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
   const debouncedBrandSearch = useDebouncedValue(brandSearch.trim(), 250);
   const debouncedTypeSearch = useDebouncedValue(typeSearch.trim(), 250);
@@ -75,6 +82,7 @@ export function ProductsListPage() {
         page: 1,
         brand: selectedBrand?.id,
         product_type: selectedType?.id,
+        include_inactive: true,
       }),
   });
 
@@ -87,7 +95,25 @@ export function ProductsListPage() {
         brand: selectedBrand?.id,
         product_type: selectedType?.id,
         has_stock: true,
+        include_inactive: true,
       }),
+  });
+
+  const isAdmin = session.role === "ADMIN";
+
+  const inventoryMetricsQuery = useQuery({
+    queryKey: ["inventory-metrics"],
+    queryFn: () => reportsService.getMetrics({}),
+    enabled: isAdmin,
+    select: (data) => {
+      const costValue = Number(data.inventory_snapshot.cost_value);
+      const costValueWithTax = costValue * (1 + IVA_RATE);
+      const retailValue = Number(data.inventory_snapshot.retail_value);
+      const potentialProfit = retailValue - costValueWithTax;
+      const totalUnits = Number(data.inventory_snapshot.total_units);
+      const marginPct = retailValue > 0 ? (potentialProfit / retailValue) * 100 : 0;
+      return { costValueWithTax, retailValue, potentialProfit, totalUnits, marginPct };
+    },
   });
 
   const sortedProducts = useMemo(() => sortProductsForDisplay(productsQuery.data?.results ?? []), [productsQuery.data]);
@@ -145,7 +171,17 @@ export function ProductsListPage() {
               </Typography>
             </Box>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+              {isAdmin && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => router.push("/products/new")}
+                  sx={{ fontWeight: 800 }}
+                >
+                  + Nuevo producto
+                </Button>
+              )}
               <Chip
                 label={`${totalProductsWithStock} con stock`}
                 sx={{
@@ -229,6 +265,82 @@ export function ProductsListPage() {
               </Paper>
             </Grid>
           </Grid>
+
+          {isAdmin && inventoryMetricsQuery.data && (
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    backgroundColor: "rgba(255, 255, 255, 0.06)",
+                    border: "1px solid rgba(148, 163, 184, 0.14)",
+                  }}
+                >
+                  <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                    Piezas totales
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                    {inventoryMetricsQuery.data.totalUnits.toLocaleString("es-MX")}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    backgroundColor: "rgba(255, 255, 255, 0.06)",
+                    border: "1px solid rgba(148, 163, 184, 0.14)",
+                  }}
+                >
+                  <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                    Costo total + IVA
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                    {formatCurrency(inventoryMetricsQuery.data.costValueWithTax)}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    backgroundColor: "rgba(255, 255, 255, 0.06)",
+                    border: "1px solid rgba(148, 163, 184, 0.14)",
+                  }}
+                >
+                  <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
+                    Valor venta total
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                    {formatCurrency(inventoryMetricsQuery.data.retailValue)}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    backgroundColor: "rgba(16, 185, 129, 0.06)",
+                    border: "1px solid rgba(16, 185, 129, 0.18)",
+                  }}
+                >
+                  <Typography variant="overline" sx={{ color: "rgba(16, 185, 129, 0.9)", fontWeight: 800 }}>
+                    Utilidad potencial
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 900, color: "#6ee7b7" }}>
+                    {formatCurrency(inventoryMetricsQuery.data.potentialProfit)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "rgba(16, 185, 129, 0.8)" }}>
+                    {inventoryMetricsQuery.data.marginPct.toFixed(1)}% margen
+                  </Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+          )}
         </Stack>
       </Paper>
 
@@ -463,6 +575,28 @@ export function ProductsListPage() {
           sx={{ width: "100%" }}
         >
           Producto borrado correctamente.
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={createdSnackbarOpen}
+        autoHideDuration={3000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        onClose={() => {
+          setCreatedSnackbarOpen(false);
+          router.replace("/products");
+        }}
+      >
+        <Alert
+          onClose={() => {
+            setCreatedSnackbarOpen(false);
+            router.replace("/products");
+          }}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          Producto creado correctamente.
         </Alert>
       </Snackbar>
     </Stack>

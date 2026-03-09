@@ -27,6 +27,7 @@ export function ProductDetailPage() {
   const searchParams = useSearchParams();
   const productId = params.id ?? "";
   const [snackbarOpen, setSnackbarOpen] = useState(searchParams.get("updated") === "1");
+  const [createdSnackbarOpen, setCreatedSnackbarOpen] = useState(searchParams.get("created") === "1");
   const { session } = useSessionStore();
 
   const productQuery = useQuery({
@@ -298,6 +299,28 @@ export function ProductDetailPage() {
           sx={{ width: "100%" }}
         >
           Producto actualizado correctamente.
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={createdSnackbarOpen}
+        autoHideDuration={3000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        onClose={() => {
+          setCreatedSnackbarOpen(false);
+          router.replace(`/products/${product.id}`);
+        }}
+      >
+        <Alert
+          onClose={() => {
+            setCreatedSnackbarOpen(false);
+            router.replace(`/products/${product.id}`);
+          }}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          Producto creado correctamente.
         </Alert>
       </Snackbar>
     </Stack>

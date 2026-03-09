@@ -221,7 +221,7 @@ export default function PosPage() {
   useEffect(() => {
     const query = search.trim();
 
-    if (!query || query.length < 2) {
+    if (!query || query.length < 1) {
       setProducts([]);
       setSearchLoading(false);
       return;
@@ -328,8 +328,12 @@ export default function PosPage() {
   const discount = lines.reduce((acc, line) => acc + line.qty * line.unitPrice * (line.discountPct / 100), 0);
   const total = subtotal - discount;
   const itemCount = lines.reduce((acc, line) => acc + line.qty, 0);
-  const searchHasQuery = search.trim().length >= 2;
+  const searchHasQuery = search.trim().length >= 1;
   const showSearchMenu = searchOpen && searchHasQuery && (searchLoading || products.length > 0);
+  const sortedSearchProducts = useMemo(
+    () => [...products].sort((a, b) => Number(b.stock) - Number(a.stock)),
+    [products],
+  );
   const selectedCardPlan = useMemo(() => {
     if (paymentMethod !== "CARD") {
       return null;
@@ -551,7 +555,6 @@ export default function PosPage() {
     setSubmitting(true);
     setErrorMessage(null);
 
-    let draftSale: SaleResponse | null = null;
     try {
       const payments = [];
       if (creditAmount > 0) {
@@ -584,8 +587,7 @@ export default function PosPage() {
         override_reason: overrideReason || undefined,
       };
 
-      draftSale = await salesService.createSale(payload);
-      const confirmedSale = await salesService.confirmSale(draftSale.id);
+      const confirmedSale = await salesService.createAndConfirmSale(payload);
       setCompletedSale(confirmedSale);
       setChangeDue(paymentMethod === "CASH" ? Math.max(receivedAmount - remainingAmount, 0) : 0);
       resetCheckoutState();
@@ -594,13 +596,9 @@ export default function PosPage() {
       setInfoMessage("Venta cobrada correctamente.");
     } catch (error) {
       if (error instanceof ApiError) {
-        if (draftSale) {
-          setErrorMessage(`La venta ${draftSale.id} quedó en borrador pero no se pudo confirmar: ${error.detail}`);
-        } else {
-          setErrorMessage(error.detail);
-        }
+        setErrorMessage(error.detail);
       } else {
-        setErrorMessage(draftSale ? `La venta ${draftSale.id} quedó en borrador pero no se pudo confirmar.` : "No fue posible cobrar la venta.");
+        setErrorMessage("No fue posible cobrar la venta.");
       }
     } finally {
       setSubmitting(false);
@@ -702,66 +700,43 @@ export default function PosPage() {
         <Stack spacing={3}>
           <ClickAwayListener onClickAway={() => setSearchOpen(false)}>
             <Box sx={{ position: "relative" }}>
-              <Paper
-                sx={{
-                  p: 2.5,
-                  border: "1px solid rgba(56, 189, 248, 0.14)",
-                  background:
-                    "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+              <TextField
+                label="Buscar producto"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setErrorMessage(null);
                 }}
-              >
-                <Stack spacing={1.25}>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                      Buscar producto
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
-                      Agrega productos por nombre o SKU y arma el carrito sin salir de caja.
-                    </Typography>
-                  </Box>
-
-                  <TextField
-                    label="Buscar producto"
-                    value={search}
-                    onChange={(event) => {
-                      setSearch(event.target.value);
-                      setErrorMessage(null);
-                    }}
-                    onFocus={() => {
-                      if (search.trim().length >= 2) {
-                        setSearchOpen(true);
-                      }
-                    }}
-                    placeholder="Busca por nombre o SKU"
-                    fullWidth
-                    helperText={search.trim().length === 1 ? "Escribe al menos 2 caracteres para buscar." : " "}
-                  />
-
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap flexWrap="wrap">
-                    {statusBadge("Búsqueda rápida", "sky")}
-                    {statusBadge("Alta visibilidad de stock", "emerald")}
-                  </Stack>
-                </Stack>
-              </Paper>
+                onFocus={() => {
+                  if (search.trim().length >= 1) {
+                    setSearchOpen(true);
+                  }
+                }}
+                placeholder="Nombre o SKU"
+                fullWidth
+              />
 
               {showSearchMenu ? (
                 <Paper
-                  elevation={10}
+                  elevation={12}
                   sx={{
                     position: "absolute",
-                    top: "calc(100% + 8px)",
+                    top: "100%",
+                    mt: 0.5,
                     left: 0,
                     right: 0,
                     zIndex: 20,
                     borderRadius: 3,
                     overflow: "hidden",
-                    border: "1px solid rgba(56, 189, 248, 0.14)",
-                    background:
-                      "linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+                    maxHeight: 420,
+                    overflowY: "auto",
+                    border: "1px solid rgba(56, 189, 248, 0.22)",
+                    backgroundColor: "#1a2540",
+                    boxShadow: "0 8px 40px rgba(0, 0, 0, 0.45)",
                   }}
                 >
                   {searchLoading ? (
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 2, py: 1.5 }}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 2.5, py: 2 }}>
                       <CircularProgress size={18} />
                       <Typography color="text.secondary" variant="body2">
                         Buscando productos...
@@ -770,16 +745,16 @@ export default function PosPage() {
                   ) : null}
 
                   {!searchLoading && products.length === 0 ? (
-                    <Box sx={{ px: 2, py: 1.5 }}>
+                    <Box sx={{ px: 2.5, py: 2 }}>
                       <Typography color="text.secondary" variant="body2">
-                        No hay productos para la búsqueda actual.
+                        No se encontraron productos.
                       </Typography>
                     </Box>
                   ) : null}
 
                   {!searchLoading ? (
-                    <Stack divider={<Divider flexItem />}>
-                      {products.map((product) => {
+                    <Stack>
+                      {sortedSearchProducts.map((product, index) => {
                         const stock = Number(product.stock);
                         const disabled = stock <= 0;
 
@@ -792,25 +767,40 @@ export default function PosPage() {
                               width: "100%",
                               justifyContent: "space-between",
                               alignItems: "center",
-                              px: 2,
+                              px: 2.5,
                               py: 1.5,
                               textAlign: "left",
-                              opacity: disabled ? 0.55 : 1,
+                              opacity: disabled ? 0.4 : 1,
+                              borderTop: index > 0 ? "1px solid rgba(148, 163, 184, 0.1)" : "none",
+                              transition: "background-color 120ms ease",
+                              "&:hover": {
+                                backgroundColor: disabled ? "transparent" : "rgba(56, 189, 248, 0.08)",
+                              },
                             }}
                           >
-                            <Stack spacing={0.5} alignItems="flex-start">
-                              <Typography fontWeight={700}>{product.name}</Typography>
-                              <Typography color="text.secondary" variant="body2">
-                                SKU {product.sku}
+                            <Stack spacing={0.25} alignItems="flex-start" sx={{ minWidth: 0, flex: 1, mr: 2 }}>
+                              <Typography fontWeight={700} noWrap>{product.name}</Typography>
+                              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, letterSpacing: "0.04em" }}>
+                                {product.sku}
                               </Typography>
                             </Stack>
 
-                            <Stack spacing={0.75} alignItems="flex-end">
-                              <Typography fontWeight={800} variant="h6">
+                            <Stack spacing={0.5} alignItems="flex-end" sx={{ flexShrink: 0 }}>
+                              <Typography fontWeight={800} sx={{ fontSize: "1.05rem" }}>
                                 {currency(Number(product.default_price))}
                               </Typography>
                               {disabled ? (
-                                <Chip size="small" label="Sin stock" color="default" />
+                                <Chip
+                                  size="small"
+                                  label="Sin stock"
+                                  sx={{
+                                    fontWeight: 700,
+                                    fontSize: "0.7rem",
+                                    color: "#94a3b8",
+                                    backgroundColor: "rgba(148, 163, 184, 0.1)",
+                                    border: "1px solid rgba(148, 163, 184, 0.15)",
+                                  }}
+                                />
                               ) : (
                                 stockChip(stock)
                               )}
