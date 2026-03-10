@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Avatar, Button, Chip, CircularProgress, Grid, Paper, Snackbar, Stack, Typography } from "@mui/material";
+import { Alert, Avatar, Box, Button, Chip, CircularProgress, Grid, Paper, Snackbar, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -193,21 +193,40 @@ export function ProductDetailPage() {
         }}
       >
         <Stack spacing={2.5}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "flex-start", md: "center" }}>
-            <Avatar
-              src={getPrimaryImageUrl(product.images, product.primary_image_id, false) ?? undefined}
-              alt={product.name}
-              sx={{
-                width: 92,
-                height: 92,
-                fontWeight: 900,
-                bgcolor: alpha("#1d4ed8", 0.14),
-                color: "#bfdbfe",
-                border: "1px solid rgba(96, 165, 250, 0.2)",
-              }}
-            >
-              {product.name.slice(0, 1).toUpperCase()}
-            </Avatar>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems={{ xs: "flex-start", md: "flex-start" }}>
+            {getPrimaryImageUrl(product.images, product.primary_image_id, false) ? (
+              <Box
+                component="img"
+                src={getPrimaryImageUrl(product.images, product.primary_image_id, false)!}
+                alt={product.name}
+                sx={{
+                  width: { xs: "100%", md: 220 },
+                  height: { xs: 200, md: 220 },
+                  objectFit: "cover",
+                  borderRadius: 3,
+                  border: "1px solid rgba(96, 165, 250, 0.2)",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <Avatar
+                variant="rounded"
+                alt={product.name}
+                sx={{
+                  width: { xs: "100%", md: 220 },
+                  height: { xs: 200, md: 220 },
+                  fontSize: "3rem",
+                  fontWeight: 900,
+                  borderRadius: 3,
+                  bgcolor: alpha("#1d4ed8", 0.14),
+                  color: "#bfdbfe",
+                  border: "1px solid rgba(96, 165, 250, 0.2)",
+                  flexShrink: 0,
+                }}
+              >
+                {product.name.slice(0, 1).toUpperCase()}
+              </Avatar>
+            )}
             <Stack spacing={0.8}>
               <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
                 {product.name}

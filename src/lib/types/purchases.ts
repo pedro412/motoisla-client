@@ -18,6 +18,15 @@ export interface SupplierParser {
 
 export type MatchStatus = "NEW_PRODUCT" | "MATCHED_PRODUCT" | "AMBIGUOUS" | "INVALID";
 
+export interface ImportLinePreviewImage {
+  id: string;
+  preview_url: string;
+  width: number;
+  height: number;
+  file?: File;
+  existing_asset_id?: string;
+}
+
 export interface ImportLine {
   id: string;
   line_no: number;
@@ -42,9 +51,7 @@ export interface ImportLine {
   is_selected: boolean;
   notes: string;
 
-  // Future feature (not implemented): image upload in preview table.
-  preview_image_url?: string;
-  preview_image_file?: File;
+  preview_images?: ImportLinePreviewImage[];
 }
 
 export interface ImportBatch {

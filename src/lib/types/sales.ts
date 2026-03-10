@@ -18,6 +18,13 @@ export interface ProductSearchItem {
   name: string;
   default_price: string;
   stock: string;
+  primary_image_id: string | null;
+  images: {
+    id: string;
+    is_primary: boolean;
+    thumb_url: string;
+    original_url: string;
+  }[];
 }
 
 export interface SaleLineInput {

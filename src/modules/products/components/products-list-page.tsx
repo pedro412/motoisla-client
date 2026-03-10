@@ -493,12 +493,15 @@ export function ProductsListPage() {
                     >
                       <TableCell>
                         <Avatar
+                          variant="rounded"
                           src={getPrimaryImageUrl(product.images, product.primary_image_id) ?? undefined}
                           alt={product.name}
                           sx={{
-                            width: 44,
-                            height: 44,
+                            width: 64,
+                            height: 64,
                             fontWeight: 900,
+                            fontSize: "1.25rem",
+                            borderRadius: 2,
                             bgcolor: "rgba(29, 78, 216, 0.12)",
                             color: "#1d4ed8",
                             border: "1px solid rgba(29, 78, 216, 0.18)",

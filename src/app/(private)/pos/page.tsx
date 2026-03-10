@@ -7,6 +7,7 @@ import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   ButtonBase,
@@ -37,6 +38,7 @@ import { layawayService } from "@/modules/layaway/services/layaway.service";
 import type { CardCommissionPlan, CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
 import type { LayawayDetailResponse } from "@/lib/types/layaway";
 import { salesService } from "@/modules/sales/services/sales.service";
+import { getPrimaryImageUrl } from "@/modules/products/image-upload";
 import { buildSaleTicketBytes, buildLayawayTicketBytes, type TicketConfig } from "@/lib/print/escpos";
 import { printViaUSB } from "@/lib/print/usb-printer";
 import { usePrinterStore } from "@/store/printer-store";
@@ -778,11 +780,31 @@ export default function PosPage() {
                               },
                             }}
                           >
-                            <Stack spacing={0.25} alignItems="flex-start" sx={{ minWidth: 0, flex: 1, mr: 2 }}>
-                              <Typography fontWeight={700} noWrap>{product.name}</Typography>
-                              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, letterSpacing: "0.04em" }}>
-                                {product.sku}
-                              </Typography>
+                            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1, mr: 2 }}>
+                              <Avatar
+                                variant="rounded"
+                                src={getPrimaryImageUrl(product.images, product.primary_image_id) ?? undefined}
+                                alt={product.name}
+                                sx={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: 1.5,
+                                  flexShrink: 0,
+                                  fontSize: "0.85rem",
+                                  fontWeight: 800,
+                                  bgcolor: "rgba(29, 78, 216, 0.12)",
+                                  color: "#1d4ed8",
+                                  border: "1px solid rgba(29, 78, 216, 0.18)",
+                                }}
+                              >
+                                {product.name.slice(0, 1).toUpperCase()}
+                              </Avatar>
+                              <Stack spacing={0.25} alignItems="flex-start" sx={{ minWidth: 0 }}>
+                                <Typography fontWeight={700} noWrap>{product.name}</Typography>
+                                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, letterSpacing: "0.04em" }}>
+                                  {product.sku}
+                                </Typography>
+                              </Stack>
                             </Stack>
 
                             <Stack spacing={0.5} alignItems="flex-end" sx={{ flexShrink: 0 }}>
@@ -855,13 +877,33 @@ export default function PosPage() {
                       >
                         <Stack spacing={1.25}>
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                            <Stack spacing={0.5}>
-                              <Typography fontWeight={700}>{line.product.name}</Typography>
-                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                {stockChip(stock)}
-                                <Typography color="text.secondary" variant="body2">
-                                  Unitario {currency(line.unitPrice)}
-                                </Typography>
+                            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                              <Avatar
+                                variant="rounded"
+                                src={getPrimaryImageUrl(line.product.images, line.product.primary_image_id) ?? undefined}
+                                alt={line.product.name}
+                                sx={{
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: 1.5,
+                                  flexShrink: 0,
+                                  fontSize: "0.9rem",
+                                  fontWeight: 800,
+                                  bgcolor: "rgba(29, 78, 216, 0.12)",
+                                  color: "#1d4ed8",
+                                  border: "1px solid rgba(29, 78, 216, 0.18)",
+                                }}
+                              >
+                                {line.product.name.slice(0, 1).toUpperCase()}
+                              </Avatar>
+                              <Stack spacing={0.5} sx={{ minWidth: 0 }}>
+                                <Typography fontWeight={700} noWrap>{line.product.name}</Typography>
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                  {stockChip(stock)}
+                                  <Typography color="text.secondary" variant="body2">
+                                    Unitario {currency(line.unitPrice)}
+                                  </Typography>
+                                </Stack>
                               </Stack>
                             </Stack>
 

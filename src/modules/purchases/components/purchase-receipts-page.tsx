@@ -46,12 +46,14 @@ export function PurchaseReceiptsPageContent() {
   });
 
   const createdReceiptId = searchParams.get("receiptId");
+  const uploadStatus = searchParams.get("upload");
   const createdMessage = useMemo(() => {
-    if (!createdReceiptId) {
-      return "Factura guardada correctamente.";
+    const baseMessage = createdReceiptId ? `Factura ${createdReceiptId} guardada correctamente.` : "Factura guardada correctamente.";
+    if (uploadStatus === "partial") {
+      return `${baseMessage} Algunas imagenes no se pudieron asociar; edita esos productos para reintentar.`;
     }
-    return `Factura ${createdReceiptId} guardada correctamente.`;
-  }, [createdReceiptId]);
+    return baseMessage;
+  }, [createdReceiptId, uploadStatus]);
 
   useEffect(() => {
     if (searchParams.get("created") === "1") {

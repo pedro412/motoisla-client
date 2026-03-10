@@ -27,7 +27,6 @@
 ## P4 - Backlog funcional (fuera de sprint)
 1. Reinversión y filtros avanzados dentro de `investors`.
 2. Multipago POS.
-3. Carga de imagen por línea en preview de compras.
-4. Deprecar en backend el parse remoto legacy cuando el flujo local esté estabilizado.
-5. Programa de lealtad por cliente usando historial de compras y teléfono como identidad.
-6. Reimpresión de ticket desde detalle de venta y cierre de caja.
+3. Deprecar en backend el parse remoto legacy cuando el flujo local esté estabilizado.
+4. Programa de lealtad por cliente usando historial de compras y teléfono como identidad.
+5. Reimpresión de ticket desde detalle de venta y cierre de caja.

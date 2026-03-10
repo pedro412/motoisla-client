@@ -13,6 +13,18 @@ export interface PendingImageUpload {
   previewUrl: string;
 }
 
+export async function uploadFileToPresignedTarget(target: { method: "PUT"; url: string; headers: Record<string, string> }, file: File) {
+  const response = await fetch(target.url, {
+    method: target.method,
+    headers: target.headers,
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error("No fue posible subir la imagen a storage.");
+  }
+}
+
 export function generatePendingImageId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();

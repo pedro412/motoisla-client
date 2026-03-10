@@ -3,6 +3,7 @@ import type {
   MediaUploadCompleteResponse,
   MediaUploadPresignPayload,
   MediaUploadPresignResponse,
+  MediaLibraryItem,
   ProductCreatePayload,
   ProductDetail,
   ProductImageAttachPayload,
@@ -66,5 +67,44 @@ export const productsService = {
 
   deleteProductImage(productId: string, imageId: string) {
     return httpClient.delete<void>(`/products/${productId}/images/${imageId}/`);
+  },
+
+  async listMediaLibrary(params?: { q?: string; max_pages?: number }) {
+    const maxPages = Math.max(1, Math.min(params?.max_pages ?? 8, 20));
+    const itemsByAssetId = new Map<string, MediaLibraryItem>();
+
+    let page = 1;
+    while (page <= maxPages) {
+      const response = await this.listProducts({
+        q: params?.q,
+        page,
+        include_inactive: true,
+      });
+
+      for (const product of response.results) {
+        for (const image of product.images) {
+          const existing = itemsByAssetId.get(image.asset_id);
+          if (existing) {
+            existing.usage_count += 1;
+            continue;
+          }
+
+          itemsByAssetId.set(image.asset_id, {
+            ...image,
+            source_product_id: product.id,
+            source_product_sku: product.sku,
+            source_product_name: product.name,
+            usage_count: 1,
+          });
+        }
+      }
+
+      if (!response.next) {
+        break;
+      }
+      page += 1;
+    }
+
+    return Array.from(itemsByAssetId.values());
   },
 };

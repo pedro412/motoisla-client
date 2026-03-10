@@ -12,6 +12,13 @@ export interface ProductImageItem {
   mime_type: string;
 }
 
+export interface MediaLibraryItem extends ProductImageItem {
+  source_product_id: string;
+  source_product_sku: string;
+  source_product_name: string;
+  usage_count: number;
+}
+
 export interface ProductListItem {
   id: string;
   sku: string;

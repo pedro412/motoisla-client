@@ -64,6 +64,8 @@ NEXT_PUBLIC_MEDIA_BASE_URL=https://public.r2.dev
 - Captura de `marca` y `tipo de producto` por línea con sugerencia automática + creación inline de taxonomy.
 - Cálculo de `precio_publico` y margen en tiempo real por línea.
 - Módulo privado de `Productos` con listado, filtros por marca/tipo, detalle, edición, borrado, tabla de movimientos y carga real de imagenes via presigned upload.
+- Uploader de `Productos` mejorado con biblioteca de assets existentes para reutilizar imagenes antes de abrir filesystem (evita duplicados).
+- En `/purchases/imports`, cada línea del preview permite seleccionar múltiples imagenes (existentes o nuevas) y asociarlas al confirmar la compra.
 - Regla visual nueva para vistas de detalle: `breadcrumb` arriba, botón `Volver` a la izquierda y acción principal a la derecha.
 - Regla visual nueva para vistas operativas: superficies dark/slate, headers con jerarquía alta y tablas sin bloques blancos planos.
 
@@ -79,7 +81,6 @@ NEXT_PUBLIC_MEDIA_BASE_URL=https://public.r2.dev
 - Detalle de cliente con historial consolidado de compras.
 - Reimpresión de ticket desde detalle de venta.
 - Comparativo de `Reportes` contra periodo anterior y drill-down financiero.
-- Carga de imagen en tabla preview de compras (placeholder ya reservado).
 
 ## Documentación
 - [docs index](./docs/README.md)

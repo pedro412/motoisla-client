@@ -25,8 +25,9 @@ import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { ApiError } from "@/lib/api/errors";
 import { MEDIA_MAX_BYTES, MEDIA_MAX_DIMENSION } from "@/lib/config/env";
-import type { ProductDetail } from "@/lib/types/products";
-import { createThumbnailFile, generatePendingImageId, readImageDimensions, validateImageMime, validateImageSize } from "@/modules/products/image-upload";
+import type { MediaLibraryItem, ProductDetail } from "@/lib/types/products";
+import { createThumbnailFile, generatePendingImageId, readImageDimensions, uploadFileToPresignedTarget, validateImageMime, validateImageSize } from "@/modules/products/image-upload";
+import { MediaAssetPickerDialog } from "@/modules/products/components/media-asset-picker-dialog";
 import { ProductDeleteDialog } from "@/modules/products/components/product-delete-dialog";
 import { productsService } from "@/modules/products/services/products.service";
 import { taxonomyService } from "@/modules/taxonomy/services/taxonomy.service";
@@ -77,18 +78,6 @@ function displayOption(option: string): string {
   return option;
 }
 
-async function uploadFileToPresignedTarget(target: { method: "PUT"; url: string; headers: Record<string, string> }, file: File) {
-  const response = await fetch(target.url, {
-    method: target.method,
-    headers: target.headers,
-    body: file,
-  });
-
-  if (!response.ok) {
-    throw new Error("No fue posible subir la imagen a storage.");
-  }
-}
-
 interface ProductEditFormContentProps {
   product?: ProductDetail;
   mode: "create" | "edit";
@@ -117,7 +106,9 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
   const [isTogglingActive, setIsTogglingActive] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [imageActionLoadingId, setImageActionLoadingId] = useState<string | null>(null);
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [pendingExistingAssets, setPendingExistingAssets] = useState<MediaLibraryItem[]>([]);
   const [existingImages, setExistingImages] = useState(() => product?.images ?? []);
 
   const costPriceKey = useMemo(() => (isCreate ? "cost_price" : getCostPriceFieldKey(product)), [isCreate, product]);
@@ -152,6 +143,14 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
       return left.sort_order - right.sort_order;
     });
   }, [existingImages]);
+
+  const disabledLibraryAssetIds = useMemo(() => {
+    const ids = new Set<string>(existingImages.map((image) => image.asset_id));
+    for (const item of pendingExistingAssets) {
+      ids.add(item.asset_id);
+    }
+    return ids;
+  }, [existingImages, pendingExistingAssets]);
 
   const canMutateImageList = !isCreate && Boolean(product?.id) && !isUploadingImages;
 
@@ -215,6 +214,80 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
   async function refreshExistingImages(productId: string) {
     const images = await productsService.listProductImages(productId);
     setExistingImages(images);
+  }
+
+  async function handleUseExistingAssets(items: MediaLibraryItem[]) {
+    if (!items.length) {
+      return;
+    }
+
+    const unique = items.filter((item) => !disabledLibraryAssetIds.has(item.asset_id));
+    if (!unique.length) {
+      return;
+    }
+
+    if (isCreate || !product?.id) {
+      setPendingExistingAssets((current) => {
+        const byAssetId = new Map(current.map((item) => [item.asset_id, item]));
+        for (const item of unique) {
+          byAssetId.set(item.asset_id, item);
+        }
+        return Array.from(byAssetId.values());
+      });
+      return;
+    }
+
+    setGeneralError(null);
+    setIsUploadingImages(true);
+    let failed = 0;
+    try {
+      for (const item of unique) {
+        try {
+          await productsService.attachProductImage(product.id, {
+            asset_id: item.asset_id,
+          });
+        } catch {
+          failed += 1;
+        }
+      }
+      await refreshExistingImages(product.id);
+      if (failed > 0) {
+        setGeneralError(`No se pudieron asociar ${failed} imagen(es) existentes.`);
+      }
+    } finally {
+      setIsUploadingImages(false);
+    }
+  }
+
+  function removePendingExistingAsset(assetId: string) {
+    setPendingExistingAssets((current) => current.filter((item) => item.asset_id !== assetId));
+  }
+
+  async function attachPendingExistingAssetsForProduct(productId: string): Promise<{ failed: number }> {
+    if (!pendingExistingAssets.length) {
+      return { failed: 0 };
+    }
+
+    setIsUploadingImages(true);
+    const failedAssetIds = new Set<string>();
+
+    try {
+      for (const item of pendingExistingAssets) {
+        try {
+          await productsService.attachProductImage(productId, {
+            asset_id: item.asset_id,
+          });
+        } catch {
+          failedAssetIds.add(item.asset_id);
+        }
+      }
+
+      setPendingExistingAssets((current) => current.filter((item) => failedAssetIds.has(item.asset_id)));
+      await refreshExistingImages(productId);
+      return { failed: failedAssetIds.size };
+    } finally {
+      setIsUploadingImages(false);
+    }
   }
 
   async function uploadPendingImagesForProduct(productId: string): Promise<{ failed: number }> {
@@ -397,12 +470,13 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
     try {
       if (isCreate) {
         const createdProduct = await productsService.createProduct(toProductCreatePayload(form));
+        const attached = await attachPendingExistingAssetsForProduct(createdProduct.id);
         const uploads = await uploadPendingImagesForProduct(createdProduct.id);
 
         await queryClient.invalidateQueries({ queryKey: ["products"] });
         await queryClient.invalidateQueries({ queryKey: ["product", createdProduct.id] });
 
-        const suffix = uploads.failed > 0 ? "&upload=partial" : "";
+        const suffix = attached.failed + uploads.failed > 0 ? "&upload=partial" : "";
         router.push(`/products/${createdProduct.id}?created=1${suffix}`);
         return;
       }
@@ -431,12 +505,13 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
 
     try {
       const updatedProduct = await productsService.updateProduct(product.id, payload);
+      const attached = await attachPendingExistingAssetsForProduct(updatedProduct.id);
       const uploads = await uploadPendingImagesForProduct(updatedProduct.id);
 
       await queryClient.invalidateQueries({ queryKey: ["products"] });
       await queryClient.invalidateQueries({ queryKey: ["product", updatedProduct.id] });
 
-      const suffix = uploads.failed > 0 ? "&upload=partial" : "";
+      const suffix = attached.failed + uploads.failed > 0 ? "&upload=partial" : "";
       setSuccessMessage("Producto actualizado correctamente.");
       router.push(`/products/${updatedProduct.id}?updated=1${suffix}`);
     } catch (error) {
@@ -717,13 +792,13 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
               {sortedExistingImages.length > 0 ? (
                 <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
                   {sortedExistingImages.map((image) => (
-                    <Paper key={image.id} variant="outlined" sx={{ p: 1.25, width: 180 }}>
+                    <Paper key={image.id} variant="outlined" sx={{ p: 1.5, width: 220 }}>
                       <Stack spacing={1}>
                         <Box
                           component="img"
                           src={image.thumb_url || image.original_url}
                           alt="Imagen producto"
-                          sx={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 1 }}
+                          sx={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 1.5 }}
                         />
                         <Typography variant="caption" sx={{ fontWeight: 700 }}>
                           {image.is_primary ? "Principal" : "Secundaria"}
@@ -757,26 +832,45 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
                 </Typography>
               )}
 
-              <Button variant="outlined" component="label" disabled={isBusy}>
-                Seleccionar imagenes
-                <input
-                  hidden
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  onChange={(event) => {
-                    void handleSelectImages(event.target.files);
-                    event.currentTarget.value = "";
-                  }}
-                />
+              <Button variant="outlined" onClick={() => setAssetPickerOpen(true)} disabled={isBusy}>
+                Agregar imagenes
               </Button>
+              <Typography variant="caption" color="text.secondary">
+                Primero selecciona en biblioteca para reutilizar assets existentes. Si no existe, sube una nueva.
+              </Typography>
+
+              {pendingExistingAssets.length > 0 ? (
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+                  {pendingExistingAssets.map((asset) => (
+                    <Paper key={asset.asset_id} variant="outlined" sx={{ p: 1.5, width: 220 }}>
+                      <Stack spacing={1}>
+                        <Box
+                          component="img"
+                          src={asset.thumb_url || asset.original_url}
+                          alt={asset.source_product_sku}
+                          sx={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 1.5 }}
+                        />
+                        <Typography variant="caption" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {asset.source_product_sku} - {asset.source_product_name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Reutilizar asset existente
+                        </Typography>
+                        <Button size="small" color="warning" variant="outlined" onClick={() => removePendingExistingAsset(asset.asset_id)} disabled={isBusy}>
+                          Quitar
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : null}
 
               {pendingImages.length > 0 ? (
                 <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
                   {pendingImages.map((image) => (
-                    <Paper key={image.id} variant="outlined" sx={{ p: 1.25, width: 180 }}>
+                    <Paper key={image.id} variant="outlined" sx={{ p: 1.5, width: 220 }}>
                       <Stack spacing={1}>
-                        <Box component="img" src={image.previewUrl} alt={image.file.name} sx={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 1 }} />
+                        <Box component="img" src={image.previewUrl} alt={image.file.name} sx={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 1.5 }} />
                         <Typography variant="caption" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {image.file.name}
                         </Typography>
@@ -799,6 +893,14 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
           </Button>
         </Stack>
       </Paper>
+
+      <MediaAssetPickerDialog
+        open={assetPickerOpen}
+        onClose={() => setAssetPickerOpen(false)}
+        disabledAssetIds={disabledLibraryAssetIds}
+        onSelectExisting={handleUseExistingAssets}
+        onPickNewFiles={handleSelectImages}
+      />
 
       {!isCreate && product && (
         <Paper sx={{ p: 2.5 }}>

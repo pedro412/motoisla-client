@@ -4,6 +4,9 @@
 - Se implementó el flujo de imágenes desacoplado con Cloudflare R2 (presign, upload directo, complete, attach por producto y soft delete).
 - Se actualizó el contrato de producto a `images[]` + `primary_image_id` para panel interno y catálogo público.
 - Se agregó guía operativa de despliegue en `docs/R2_PRODUCTION_CHECKLIST.md` y enlace desde README.
+- En `/purchases/imports`, el preview por línea ahora permite subir imagen (JPG/PNG/WEBP) y al confirmar compra se intenta asociar automáticamente al producto confirmado.
+- En edición/alta de producto, el uploader ahora abre primero una biblioteca de assets existentes para reutilizar imagenes y evitar duplicados antes de abrir filesystem.
+- En `/purchases/imports`, la selección ahora soporta múltiples imagenes por línea (biblioteca + nuevas) y las adjunta en bloque por producto al confirmar.
 
 ## 2026-03-02 (UI polish + reglas de detalle)
 - Nuevo patrón reusable `DetailPageHeader` para vistas detalle con breadcrumb, botón de regreso y acción principal alineada.
