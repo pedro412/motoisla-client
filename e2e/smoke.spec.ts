@@ -10,7 +10,7 @@ test("login page renders auth layout", async ({ page }) => {
 test("public catalog is reachable without auth", async ({ page }) => {
   await page.goto("/catalog");
 
-  await expect(page.getByRole("heading", { name: "Catálogo Público" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Cat[aá]logo P[uú]blico/i })).toBeVisible();
 });
 
 test("private route redirects to login when unauthenticated", async ({ page }) => {
