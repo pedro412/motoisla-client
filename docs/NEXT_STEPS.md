@@ -1,7 +1,7 @@
 # Next Steps (Prioritized)
 
 ## P1 - Operación crítica
-1. Implementar motor de utilidad neta por venta + reparto automático a inversionistas con snapshot inmutable. Ver `docs/BACKLOG_PROFITABILITY_ENGINE_V1.md`.
+1. Cerrar hardening del motor de utilidad neta + reparto a inversionistas (idempotencia de `PROFIT_SHARE`, validación de neto `<= 0` y pruebas de ventas mixtas). Ver `docs/BACKLOG_PROFITABILITY_ENGINE_V1.md`.
 2. Agregar navegación por teclado al buscador de `Nueva Venta` (`ArrowDown`, `Enter`, `Esc`).
 3. Mostrar errores de create vs confirm de venta con resolución más guiada cuando una venta queda en `DRAFT`.
 4. Agregar filtros en `/ventas` (estatus, cajero, fecha e ID).

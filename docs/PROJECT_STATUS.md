@@ -15,6 +15,10 @@
   - soporte de comisión de tarjeta configurable y MSI desde backend.
 - captura opcional de cliente por teléfono, lookup de saldo a favor y creación de apartados desde el carrito.
 - Historial de ventas en `/ventas` con tabla paginada, detalle por venta y cancelación por reglas backend.
+- Rentabilidad v1 integrada en cliente:
+  - POS consulta preview de utilidad neta antes de confirmar (`/sales/preview-profitability/`).
+  - Detalle de venta renderiza snapshot financiero persistido (`profitability_breakdown`).
+  - Reportes consume `profitability_metrics` cuando backend las devuelve.
 - Apartados:
   - `/apartados` con listado operativo y filtros.
   - `/apartados/[id]` con detalle, abonos, extensión y vencimiento.
@@ -38,7 +42,9 @@
   - smoke e2e (Playwright)
 
 ## Pendiente prioritario
-- Implementar cálculo de costo operativo en tiempo real por venta y reparto neto a inversionistas (documentado en `BACKLOG_PROFITABILITY_ENGINE_V1`).
+- Completar hardening del motor de rentabilidad v1 en backend/operación:
+  - validar idempotencia de posting `PROFIT_SHARE` en retries/reconfirmaciones
+  - cerrar cobertura funcional de casos mixtos y neto inversionista `<= 0`
 - Fortalecer validaciones POS por campo (`fields`) y UX de errores finos en modal de cobro.
 - Completar e2e de negocio (POS + apartados + compras con assertions de inventario).
 - Endurecer concurrencia/locking de compra de inversionistas para evitar carreras de asignación simultánea.
@@ -48,6 +54,6 @@
 - Endurecer observabilidad frontend (logging estructurado y captura de errores).
 
 ## Riesgos abiertos
-- Sin motor de neto por venta, existe riesgo de payout a inversionistas superior a utilidad real.
+- Sin e2e funcional profundo del motor de rentabilidad, existe riesgo de discrepancias de reparto en escenarios límite.
 - Dependencia de datos/usuarios locales para validar flujos de negocio avanzados.
 - Cobertura e2e actual es smoke; falta cobertura funcional profunda.

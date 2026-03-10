@@ -11,6 +11,15 @@
 ## Objetivo de esta iniciativa
 - Implementar un motor de utilidad neta por venta que calcule y congele (snapshot) el costo operativo aplicado, y ejecute reparto automático a inversionistas solo sobre utilidad neta real.
 
+## Estado actual (2026-03-10)
+- Cliente integrado:
+1. POS consulta preview (`POST /sales/preview-profitability/`) antes de confirmar.
+2. Detalle de venta muestra `profitability_breakdown` cuando viene en la respuesta.
+3. Reportes consume `profitability_metrics` cuando backend las expone.
+- Endpoints validados en entorno local backend (responden autenticación requerida, no `404`):
+1. `POST /sales/preview-profitability/`
+2. `GET /profitability/operating-cost-rate/`
+
 ## Decisiones cerradas
 1. Método híbrido para tasa operativa.
 2. Inclusión de comisión de tarjeta como costo directo de la venta.
@@ -51,26 +60,26 @@
 2. `rate_source` (`MTD_REAL` o `FALLBACK_BASE`)
 3. fecha/hora del cálculo.
 
-## APIs, interfaces y tipos propuestos (documentados, no implementados)
+## APIs, interfaces y tipos (cliente integrado)
 
-### APIs nuevas propuestas
+### APIs usadas por cliente
 1. `POST /sales/preview-profitability/`
 - Simula utilidad neta y reparto antes de confirmar.
 2. `GET /profitability/operating-cost-rate/`
 - Devuelve tasa vigente, fuente y metadatos del cálculo.
 
-### Extensiones propuestas
+### Contratos esperados de venta confirmada
 1. `POST /sales/{id}/confirm/`
-- Debe devolver snapshot financiero final (venta + líneas + split).
+- Debe devolver snapshot financiero final (venta + líneas + split) para trazabilidad en UI.
 2. `GET /sales/{id}/`
-- Debe incluir snapshot persistido de rentabilidad.
+- Debe incluir snapshot persistido de rentabilidad para detalle histórico.
 
-### Contratos frontend propuestos
+### Contratos frontend implementados
 1. `SaleProfitabilityBreakdown`
 2. `SaleLineProfitability`
 3. `rate_source` con enum `MTD_REAL | FALLBACK_BASE`
 
-### Métricas nuevas propuestas en reportes
+### Métricas de reportes integradas en cliente
 1. `operating_cost_rate_avg`
 2. `operating_cost_total_allocated`
 3. `fallback_usage_count`
@@ -85,10 +94,11 @@
 - Endpoint de preview para POS.
 
 ### Frontend
-- POS: panel de preview de rentabilidad antes de cobrar.
-- Detalle de venta: visualización del snapshot final.
-- Reportes: exposición de nuevas métricas de tasa/costo operativo.
-- Tipado estricto para nuevos contratos sin romper flujos actuales.
+- Implementado:
+1. POS: panel de preview de rentabilidad antes de cobrar.
+2. Detalle de venta: visualización del snapshot final.
+3. Reportes: exposición de métricas de tasa/costo operativo.
+4. Tipado estricto para nuevos contratos sin romper flujos actuales.
 
 ## Riesgos y reglas de idempotencia
 - Riesgo: duplicar `PROFIT_SHARE` en retries o reconfirmaciones.
@@ -125,5 +135,5 @@
 - Este documento describe contratos propuestos para coordinar la implementación cross-repo.
 
 ## Alcance explícito de este backlog
-- Esta entrega es documental (backlog + especificación), sin cambios productivos de runtime en frontend o backend.
-
+- Este documento nació como backlog documental y ahora también funciona como referencia de hardening para cierre de v1.
+- El estado actual en cliente está implementado; los pendientes principales se concentran en hardening y validación funcional profunda cross-repo.

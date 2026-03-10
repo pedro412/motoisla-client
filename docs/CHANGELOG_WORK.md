@@ -1,5 +1,11 @@
 # Work Changelog
 
+## 2026-03-10 (Alineación documental rentabilidad + ledger)
+- Se auditó el estado real del cliente contra código y se corrigieron desalineaciones en documentación.
+- `README.md` ya no marca `investors/ledger` como backlog; se mantiene como funcionalidad implementada.
+- `docs/PROJECT_STATUS.md` y `docs/NEXT_STEPS.md` movieron rentabilidad de “implementación pendiente” a “hardening/QA pendiente”.
+- `docs/BACKLOG_PROFITABILITY_ENGINE_V1.md` pasó de estado “solo propuesta” a referencia de estado actual + pendientes de cierre v1.
+
 ## 2026-03-09 (Media R2 + checklist de producción)
 - Se implementó el flujo de imágenes desacoplado con Cloudflare R2 (presign, upload directo, complete, attach por producto y soft delete).
 - Se actualizó el contrato de producto a `images[]` + `primary_image_id` para panel interno y catálogo público.

@@ -59,6 +59,10 @@ NEXT_PUBLIC_MEDIA_BASE_URL=https://public.r2.dev
 - Módulo de `Gastos` (`/expenses`) con plantillas recurrentes, generación mensual y control de pendientes/pagados.
 - Módulo de apartados con listado, detalle, abonos, extensión y vencimiento.
 - Historial de ventas con detalle por venta.
+- Motor de rentabilidad integrado en cliente:
+  - preview de utilidad neta en checkout POS (`/sales/preview-profitability/`)
+  - snapshot financiero visible en detalle de venta (`/ventas/[id]`)
+  - lectura de métricas de rentabilidad en `Reportes` cuando backend las expone
 - Compras por importación con parse local (`MYESA`), preview en cards y confirmación backend transaccional (`preview-confirm`).
 - Parser MYESA en cliente ya soporta filas de producto con o sin prefijo `**`, manteniendo cálculo de `Costo + IVA` en preview.
 - Captura de `marca` y `tipo de producto` por línea con sugerencia automática + creación inline de taxonomy.
@@ -76,7 +80,6 @@ NEXT_PUBLIC_MEDIA_BASE_URL=https://public.r2.dev
 - E2E profundo de compras (parse cliente/edición/confirm + validación de stock).
 
 ### Backlog
-- UI de `investors/ledger`.
 - Multipago POS.
 - Detalle de cliente con historial consolidado de compras.
 - Reimpresión de ticket desde detalle de venta.
