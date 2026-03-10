@@ -1,4 +1,5 @@
 import { httpClient } from "@/lib/api/http-client";
+import { ApiError } from "@/lib/api/errors";
 import type {
   InvestorAssignmentsResponse,
   InvestorCapitalOperationPayload,
@@ -13,6 +14,41 @@ import type {
 } from "@/lib/types/investors";
 
 export const investorsService = {
+  getMyInvestor() {
+    return httpClient.get<InvestorDetail>("/investors/me/");
+  },
+
+  getMyInvestorLedger(params: InvestorLedgerFilters) {
+    return httpClient.get<InvestorLedgerResponse>("/investors/me/ledger/", {
+      page: params.page,
+      entry_type: params.entry_type || undefined,
+      date_from: params.date_from || undefined,
+      date_to: params.date_to || undefined,
+    });
+  },
+
+  async listMyInvestorAssignments(params: { investorId?: string; page?: number }) {
+    try {
+      return await httpClient.get<InvestorAssignmentsResponse>("/investors/me/assignments/", {
+        page: params.page,
+      });
+    } catch (error) {
+      if (!(error instanceof ApiError)) {
+        throw error;
+      }
+
+      const canTryLegacyEndpoint = (error.status === 404 || error.status === 405) && Boolean(params.investorId);
+      if (!canTryLegacyEndpoint) {
+        throw error;
+      }
+
+      return httpClient.get<InvestorAssignmentsResponse>("/investors/assignments/", {
+        investor: params.investorId,
+        page: params.page,
+      });
+    }
+  },
+
   listInvestors(params: { q?: string; page?: number }) {
     return httpClient.get<InvestorsListResponse>("/investors/", {
       q: params.q,
