@@ -54,6 +54,14 @@ export const privateNavItems: AppNavItem[] = [
     requiredRoles: ["ADMIN", "CASHIER"],
   },
   {
+    key: "investor-self",
+    label: "Inversionista",
+    href: "/investor",
+    icon: <AccountBalanceWalletRoundedIcon fontSize="small" />,
+    module: "investors",
+    requiredRoles: ["INVESTOR"],
+  },
+  {
     key: "reports",
     label: "Reportes",
     href: "/admin/reports",
@@ -99,5 +107,6 @@ export const privateNavItems: AppNavItem[] = [
     href: "/settings/security",
     icon: <SecurityRoundedIcon fontSize="small" />,
     module: "settings",
+    requiredRoles: ["ADMIN", "CASHIER"],
   },
 ];

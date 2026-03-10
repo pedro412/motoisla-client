@@ -16,5 +16,9 @@ export default async function LegacyDashboardRoute() {
     redirect("/admin/reports");
   }
 
+  if (role === "INVESTOR") {
+    redirect("/investor");
+  }
+
   redirect("/pos");
 }

@@ -42,7 +42,10 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const showPrinterStatus = session.role !== "INVESTOR";
+
   useEffect(() => {
+    if (!showPrinterStatus) return;
     if (typeof navigator === "undefined" || !("usb" in navigator)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const usb = (navigator as any).usb as { getDevices: () => Promise<unknown[]>; addEventListener: (event: string, handler: () => void) => void; removeEventListener: (event: string, handler: () => void) => void };
@@ -67,7 +70,7 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
       usb.removeEventListener("connect", onConnect);
       usb.removeEventListener("disconnect", onDisconnect);
     };
-  }, [setPrinterStatus]);
+  }, [setPrinterStatus, showPrinterStatus]);
 
   function handleMenuOpen(e: MouseEvent<HTMLElement>) {
     setAnchorEl(e.currentTarget);
@@ -142,11 +145,13 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title={printerStatus === "ok" ? "Impresora lista" : "Impresora no detectada"}>
-            <IconButton size="small" sx={{ color: printerStatus === "ok" ? "#22c55e" : "#475569" }}>
-              <PrintRoundedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {showPrinterStatus ? (
+            <Tooltip title={printerStatus === "ok" ? "Impresora lista" : "Impresora no detectada"}>
+              <IconButton size="small" sx={{ color: printerStatus === "ok" ? "#22c55e" : "#475569" }}>
+                <PrintRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
           <IconButton
             color="inherit"
             onClick={handleMenuOpen}

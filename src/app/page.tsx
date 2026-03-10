@@ -16,5 +16,9 @@ export default async function HomePage() {
     redirect("/admin/reports");
   }
 
+  if (role === "INVESTOR") {
+    redirect("/investor");
+  }
+
   redirect("/pos");
 }
