@@ -8,10 +8,12 @@ export function useInactivityTimer(enabled: boolean) {
   const isLocked = useWorkstationStore((s) => s.isLocked);
   const lock = useWorkstationStore((s) => s.lock);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastActivityRef = useRef(Date.now());
+  const lastActivityRef = useRef(0);
 
   useEffect(() => {
     if (!enabled || isLocked) return;
+
+    lastActivityRef.current = Date.now();
 
     function resetTimer() {
       const now = Date.now();

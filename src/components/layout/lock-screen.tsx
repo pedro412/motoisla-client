@@ -61,26 +61,18 @@ function Clock() {
 
 function PinInput({
   onComplete,
-  error,
   disabled,
 }: {
   onComplete: (pin: string) => void;
-  error: string | null;
   disabled: boolean;
 }) {
   const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    inputRefs.current[0]?.focus();
+    const timer = setTimeout(() => inputRefs.current[0]?.focus(), 50);
+    return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (error) {
-      setDigits(["", "", "", "", "", ""]);
-      setTimeout(() => inputRefs.current[0]?.focus(), 100);
-    }
-  }, [error]);
 
   const handleChange = useCallback(
     (index: number, value: string) => {
@@ -160,11 +152,6 @@ function PinInput({
           />
         ))}
       </Stack>
-      {error && (
-        <Typography variant="body2" color="error" sx={{ mt: 1, textAlign: "center" }}>
-          {error}
-        </Typography>
-      )}
     </Box>
   );
 }
@@ -179,6 +166,8 @@ export function LockScreen() {
   const [selectedProfile, setSelectedProfile] = useState<WorkstationProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [pinResetKey, setPinResetKey] = useState(0);
 
   // Full login form state
   const [loginUsername, setLoginUsername] = useState("");
@@ -219,6 +208,7 @@ export function LockScreen() {
         unlock();
       } catch (err) {
         setError(err instanceof ApiError ? err.detail : "PIN incorrecto.");
+        setPinResetKey((k) => k + 1);
       } finally {
         setSubmitting(false);
       }
@@ -385,7 +375,13 @@ export function LockScreen() {
             Ingresa tu PIN
           </Typography>
 
-          <PinInput onComplete={handlePinComplete} error={error} disabled={submitting} />
+          <PinInput key={pinResetKey} onComplete={handlePinComplete} disabled={submitting} />
+
+          {error && (
+            <Typography variant="body2" color="error" sx={{ mt: 1, textAlign: "center" }}>
+              {error}
+            </Typography>
+          )}
 
           {submitting && <CircularProgress size={24} sx={{ mt: 2 }} />}
 
