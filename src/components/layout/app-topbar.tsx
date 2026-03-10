@@ -1,17 +1,32 @@
 "use client";
 
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import NoAccountsRoundedIcon from "@mui/icons-material/NoAccountsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
-import { AppBar, Box, Button, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import {
+  AppBar,
+  Box,
+  Divider,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 
 import { authService } from "@/modules/auth/services/auth.service";
 import { useSessionStore } from "@/store/session-store";
 import { usePrinterStore } from "@/store/printer-store";
+import { useWorkstationStore } from "@/store/workstation-store";
 
 interface AppTopbarProps {
   title: string;
@@ -23,6 +38,8 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
   const queryClient = useQueryClient();
   const { session, clearSession } = useSessionStore();
   const { status: printerStatus, setStatus: setPrinterStatus } = usePrinterStore();
+  const { lock, removeProfile } = useWorkstationStore();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
@@ -52,13 +69,45 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
     };
   }, [setPrinterStatus]);
 
+  function handleMenuOpen(e: MouseEvent<HTMLElement>) {
+    setAnchorEl(e.currentTarget);
+  }
+
+  function handleMenuClose() {
+    setAnchorEl(null);
+  }
+
+  function handleLock() {
+    handleMenuClose();
+    lock();
+  }
+
   async function handleLogout() {
+    handleMenuClose();
     setIsLoggingOut(true);
     try {
       await authService.logout();
     } finally {
       clearSession();
       queryClient.clear();
+      router.push("/login");
+      router.refresh();
+      setIsLoggingOut(false);
+    }
+  }
+
+  async function handleLeaveWorkstation() {
+    handleMenuClose();
+    const username = session.username;
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+    } finally {
+      clearSession();
+      queryClient.clear();
+      if (username) {
+        removeProfile(username);
+      }
       router.push("/login");
       router.refresh();
       setIsLoggingOut(false);
@@ -93,23 +142,44 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button startIcon={<PersonRoundedIcon />} variant="text" color="inherit">
-            {session.username ?? "Usuario"}
-          </Button>
           <Tooltip title={printerStatus === "ok" ? "Impresora lista" : "Impresora no detectada"}>
             <IconButton size="small" sx={{ color: printerStatus === "ok" ? "#22c55e" : "#475569" }}>
               <PrintRoundedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Button
-            startIcon={<LogoutRoundedIcon />}
-            variant="outlined"
+          <IconButton
             color="inherit"
-            onClick={handleLogout}
+            onClick={handleMenuOpen}
             disabled={isLoggingOut}
           >
-            Logout
-          </Button>
+            <PersonRoundedIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            <MenuItem disabled>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {session.username ?? "Usuario"}
+              </Typography>
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLock}>
+              <ListItemIcon><LockRoundedIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Bloquear</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon><LogoutRoundedIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Cerrar sesión</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleLeaveWorkstation}>
+              <ListItemIcon><NoAccountsRoundedIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Salir de este equipo</ListItemText>
+            </MenuItem>
+          </Menu>
         </Box>
       </Toolbar>
     </AppBar>

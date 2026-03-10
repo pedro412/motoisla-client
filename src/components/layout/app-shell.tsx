@@ -6,9 +6,12 @@ import { usePathname } from "next/navigation";
 
 import { AppSidebar, DRAWER_WIDTH } from "@/components/layout/app-sidebar";
 import { AppTopbar } from "@/components/layout/app-topbar";
+import { LockScreen } from "@/components/layout/lock-screen";
 import { privateNavItems } from "@/config/navigation";
+import { useInactivityTimer } from "@/hooks/use-inactivity-timer";
 import { authService } from "@/modules/auth/services/auth.service";
 import { useSessionStore } from "@/store/session-store";
+import { useWorkstationStore } from "@/store/workstation-store";
 
 interface AppShellProps {
   children: ReactNode;
@@ -51,8 +54,8 @@ function getTitleFromPath(pathname: string): string {
     return "Apartados";
   }
 
-  if (pathname.startsWith("/settings/printer")) {
-    return "Impresora";
+  if (pathname.startsWith("/settings")) {
+    return "Configuración";
   }
 
   return "MotoIsla";
@@ -62,6 +65,9 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { session, hydrated, setHydrated, setSession } = useSessionStore();
+  const isLocked = useWorkstationStore((s) => s.isLocked);
+
+  useInactivityTimer(session.isAuthenticated);
 
   const title = useMemo(() => getTitleFromPath(pathname), [pathname]);
 
@@ -104,6 +110,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+      {isLocked && <LockScreen />}
       <AppTopbar title={title} onOpenMobileMenu={() => setMobileOpen(true)} />
       <AppSidebar navItems={navItems} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
 

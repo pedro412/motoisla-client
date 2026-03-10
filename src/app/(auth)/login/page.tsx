@@ -8,10 +8,12 @@ import { FormEvent, useState } from "react";
 import { ApiError } from "@/lib/api/errors";
 import { authService } from "@/modules/auth/services/auth.service";
 import { useSessionStore } from "@/store/session-store";
+import { useWorkstationStore } from "@/store/workstation-store";
 
 export default function LoginPage() {
   const router = useRouter();
   const { setSession, setHydrated } = useSessionStore();
+  const registerProfile = useWorkstationStore((s) => s.registerProfile);
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,6 +28,14 @@ export default function LoginPage() {
       const session = await authService.login({ username, password });
       setSession(session);
       setHydrated(true);
+      if (session.username && session.role) {
+        registerProfile({
+          username: session.username,
+          firstName: session.firstName ?? "",
+          role: session.role,
+          hasPIN: session.hasPIN ?? false,
+        });
+      }
       if (session.role === "ADMIN") {
         router.push("/admin/reports");
       } else {

@@ -8,7 +8,7 @@ All client API calls go through a Next.js proxy — never directly to Django.
 - Next.js (App Router), React 19, TypeScript
 - MUI v7 (Material UI) — dark theme, fully configured
 - TanStack Query v5 — all server state
-- Zustand — client state (session, printer config)
+- Zustand — client state (session, printer config, workstation lock)
 - Vitest + Playwright for tests
 - Package manager: **pnpm** (`pnpm dev` to run)
 
@@ -35,11 +35,11 @@ src/
     (private)/        # all authenticated pages
     (public)/         # catalog (no auth)
     api/
-      auth/           # login, logout, refresh, session route handlers
+      auth/           # login, logout, refresh, session, pin-login route handlers
       proxy/[...path] # catch-all proxy to Django
   components/
     common/           # page-header, detail-page-header
-    layout/           # app-shell, app-sidebar, app-topbar
+    layout/           # app-shell, app-sidebar, app-topbar, lock-screen
     forms/            # money-input
   modules/<module>/
     services/         # API calls via httpClient
@@ -56,9 +56,12 @@ src/
       escpos.ts       # ESC/POS ticket builders (sale, layaway, test)
       usb-printer.ts  # WebUSB printer driver
     types/            # TypeScript types per domain
+  hooks/
+    use-inactivity-timer.ts  # configurable inactivity lock trigger
   store/
-    session-store.ts  # Zustand: auth session
-    printer-store.ts  # Zustand + persist: USB printer config
+    session-store.ts       # Zustand: auth session
+    printer-store.ts       # Zustand + persist: USB printer config
+    workstation-store.ts   # Zustand + persist: workstation profiles, lock state, timeout
   theme/
     theme.ts          # MUI theme (dark blue-slate, all component overrides)
   config/
@@ -106,6 +109,19 @@ Key points:
 - Settings page: `src/app/(private)/settings/printer/page.tsx`
 - WebUSB only works in browser (not SSR). Use `isWebUsbSupported()` before calling print APIs.
 
+## Workstation lock screen
+
+- After X min of inactivity (configurable: 1, 2, 5, 10 min) the screen locks
+- Lock screen shows avatars of users who have logged in on this machine (persisted in localStorage)
+- Select avatar → enter 6-digit PIN (or password if no PIN configured)
+- "Iniciar como otro usuario" → full username+password form
+- Topbar user menu: Bloquear / Cerrar sesión / Salir de este equipo
+- `src/store/workstation-store.ts`: profiles + inactivityTimeoutMs + isLocked (all persisted)
+- `src/hooks/use-inactivity-timer.ts`: fires lock after timeout
+- `src/components/layout/lock-screen.tsx`: lock screen overlay
+- `src/app/(private)/settings/security/page.tsx`: PIN setup/remove + timeout selector
+- Backend PIN endpoints: `POST /auth/pin-login/` (anon), `POST /auth/pin/` (authed)
+
 ## Routes
 
 | Path | Description |
@@ -132,6 +148,7 @@ Key points:
 | `/admin/reports` | Sales reports (admin only) |
 | `/admin/users` | User management (admin only) |
 | `/settings/printer` | USB printer config |
+| `/settings/security` | PIN setup + inactivity timeout config |
 | `/catalog` | Public product catalog (no auth) |
 | `/catalog/[sku]` | Public product detail |
 

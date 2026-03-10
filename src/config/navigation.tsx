@@ -8,6 +8,7 @@ import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceW
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
+import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 
 import type { AppNavItem } from "@/types/navigation";
 
@@ -91,5 +92,12 @@ export const privateNavItems: AppNavItem[] = [
     icon: <PrintRoundedIcon fontSize="small" />,
     module: "settings",
     requiredRoles: ["ADMIN"],
+  },
+  {
+    key: "settings-security",
+    label: "Seguridad",
+    href: "/settings/security",
+    icon: <SecurityRoundedIcon fontSize="small" />,
+    module: "settings",
   },
 ];

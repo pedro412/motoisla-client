@@ -11,6 +11,7 @@ export interface UserSummary {
   date_joined: string;
   last_login: string | null;
   investor_profile_id: string | null;
+  has_pin: boolean;
 }
 
 export interface UserCreatePayload {

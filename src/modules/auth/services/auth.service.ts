@@ -60,4 +60,19 @@ export const authService = {
   async confirmPasswordReset(data: PasswordResetConfirm) {
     return httpClient.post<PasswordResetConfirm, { detail: string }>("/auth/password-reset-confirm/", data);
   },
+
+  async pinLogin(input: { username: string; pin: string }): Promise<AuthSession> {
+    const response = await fetch("/api/auth/pin-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+    });
+    const payload = await parseResponse<LoginResponse>(response);
+    return payload.session;
+  },
+
+  async setPin(data: { pin: string | null; current_password: string }) {
+    return httpClient.post<typeof data, { detail: string; has_pin: boolean }>("/auth/pin/", data);
+  },
 };

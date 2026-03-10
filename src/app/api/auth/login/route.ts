@@ -38,11 +38,33 @@ export async function POST(request: Request) {
   const cookieStore = await cookies();
   const role = await saveSessionCookies({ cookieStore, accessToken, refreshToken, username });
 
+  // Fetch user profile for workstation registration
+  let firstName = "";
+  let hasPIN = false;
+  try {
+    const usersRes = await fetch(`${API_BASE_URL}/users/?q=${encodeURIComponent(username)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+    if (usersRes.ok) {
+      const usersData = (await usersRes.json()) as { results: Array<{ first_name: string; has_pin: boolean; username: string }> };
+      const match = usersData.results.find((u) => u.username === username);
+      if (match) {
+        firstName = match.first_name;
+        hasPIN = match.has_pin;
+      }
+    }
+  } catch {
+    // Non-critical — continue without profile data
+  }
+
   return NextResponse.json({
     session: {
       isAuthenticated: true,
       role,
       username,
+      firstName,
+      hasPIN,
     },
   });
 }

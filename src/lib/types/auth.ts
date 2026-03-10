@@ -4,6 +4,8 @@ export interface AuthSession {
   isAuthenticated: boolean;
   role?: Role;
   username?: string;
+  firstName?: string;
+  hasPIN?: boolean;
 }
 
 export interface PasswordResetRequest {
