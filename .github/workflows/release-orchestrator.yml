@@ -1,0 +1,343 @@
+name: Release Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: "SemVer bump para esta release"
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      server_ref:
+        description: "Branch, tag o SHA del server a liberar"
+        type: string
+        required: true
+        default: main
+      dry_run:
+        description: "Solo validar/calcular (sin crear tags ni deploy)"
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: release-orchestrator
+  cancel-in-progress: false
+
+env:
+  SERVER_REPO: pedro412/motoisla-server
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      next_version: ${{ steps.version.outputs.next_version }}
+      server_sha: ${{ steps.server.outputs.server_sha }}
+      manifest_file: ${{ steps.artifacts.outputs.manifest_file }}
+      notes_file: ${{ steps.artifacts.outputs.notes_file }}
+    steps:
+      - name: Validate branch
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "Este workflow solo puede correrse desde main."
+            exit 1
+          fi
+
+      - name: Checkout client
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Client quality gates
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
+
+      - name: Compute next version
+        id: version
+        shell: bash
+        run: |
+          latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n1)"
+          bump_type="${{ inputs.bump_type }}"
+
+          if [ -z "${latest_tag}" ]; then
+            next_version="v1.0.0"
+          else
+            version="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "${version}"
+
+            case "${bump_type}" in
+              patch)
+                patch=$((patch + 1))
+                ;;
+              minor)
+                minor=$((minor + 1))
+                patch=0
+                ;;
+              major)
+                major=$((major + 1))
+                minor=0
+                patch=0
+                ;;
+              *)
+                echo "bump_type invalido: ${bump_type}"
+                exit 1
+                ;;
+            esac
+
+            next_version="v${major}.${minor}.${patch}"
+          fi
+
+          echo "next_version=${next_version}" >> "${GITHUB_OUTPUT}"
+          echo "Next version: ${next_version}"
+
+      - name: Resolve and validate server ref
+        id: server
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+          SERVER_REF: ${{ inputs.server_ref }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "Falta secret GH_PAT_CROSS_REPO"
+            exit 1
+          fi
+
+          server_sha="$(gh api "repos/${SERVER_REPO}/commits/${SERVER_REF}" --jq '.sha')"
+          if [ -z "${server_sha}" ] || [ "${server_sha}" = "null" ]; then
+            echo "No se pudo resolver server_ref=${SERVER_REF}"
+            exit 1
+          fi
+
+          echo "server_sha=${server_sha}" >> "${GITHUB_OUTPUT}"
+          echo "Server SHA: ${server_sha}"
+
+      - name: Ensure tag does not exist in client
+        env:
+          VERSION: ${{ steps.version.outputs.next_version }}
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "El tag ${VERSION} ya existe en client"
+            exit 1
+          fi
+
+      - name: Ensure tag does not exist in server
+        env:
+          VERSION: ${{ steps.version.outputs.next_version }}
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+        run: |
+          if gh api "repos/${SERVER_REPO}/git/ref/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "El tag ${VERSION} ya existe en server"
+            exit 1
+          fi
+
+      - name: Generate release artifacts
+        id: artifacts
+        env:
+          VERSION: ${{ steps.version.outputs.next_version }}
+          SERVER_SHA: ${{ steps.server.outputs.server_sha }}
+        run: |
+          mkdir -p release-artifacts
+
+          manifest_file="release-artifacts/release-manifest-${VERSION}.json"
+          notes_file="release-artifacts/release-notes-${VERSION}.md"
+          created_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          cat > "${manifest_file}" <<EOF
+          {
+            "version": "${VERSION}",
+            "created_at_utc": "${created_at}",
+            "bump_type": "${{ inputs.bump_type }}",
+            "dry_run": ${{ inputs.dry_run }},
+            "client": {
+              "repo": "${GITHUB_REPOSITORY}",
+              "sha": "${GITHUB_SHA}"
+            },
+            "server": {
+              "repo": "${SERVER_REPO}",
+              "ref": "${{ inputs.server_ref }}",
+              "sha": "${SERVER_SHA}"
+            }
+          }
+          EOF
+
+          cat > "${notes_file}" <<EOF
+          # Release ${VERSION}
+
+          ## Scope
+          - Product version: \`${VERSION}\`
+          - Bump type: \`${{ inputs.bump_type }}\`
+          - Dry run: \`${{ inputs.dry_run }}\`
+
+          ## Artifacts
+          - Client: \`${GITHUB_REPOSITORY}@${GITHUB_SHA}\`
+          - Server: \`${SERVER_REPO}@${SERVER_SHA}\` (from \`${{ inputs.server_ref }}\`)
+          - Manifest: \`release-manifest-${VERSION}.json\`
+          EOF
+
+          echo "manifest_file=${manifest_file}" >> "${GITHUB_OUTPUT}"
+          echo "notes_file=${notes_file}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ steps.version.outputs.next_version }}
+          path: release-artifacts/
+
+  release:
+    name: Tag and Trigger Deploys
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ !inputs.dry_run }}
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.prepare.outputs.next_version }}
+          path: release-artifacts
+
+      - name: Create server tag
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+          VERSION: ${{ needs.prepare.outputs.next_version }}
+          SERVER_SHA: ${{ needs.prepare.outputs.server_sha }}
+        run: |
+          echo "SERVER_TAG_CREATED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "${GITHUB_ENV}"
+          gh api "repos/${SERVER_REPO}/git/refs" \
+            -X POST \
+            -f ref="refs/tags/${VERSION}" \
+            -f sha="${SERVER_SHA}" >/dev/null
+          echo "Server tag ${VERSION} creado en ${SERVER_SHA}"
+
+      - name: Wait for server deploy workflow
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+          VERSION: ${{ needs.prepare.outputs.next_version }}
+          SERVER_SHA: ${{ needs.prepare.outputs.server_sha }}
+        run: |
+          set -euo pipefail
+
+          timeout_seconds=5400
+          interval=20
+          elapsed=0
+          run_id=""
+
+          echo "Esperando run de deploy-prod.yml en ${SERVER_REPO} para tag ${VERSION}..."
+          while [ "${elapsed}" -lt "${timeout_seconds}" ]; do
+            run_id="$(gh api "repos/${SERVER_REPO}/actions/workflows/deploy-prod.yml/runs?event=push&per_page=50" \
+              --jq ".workflow_runs[] | select(.head_sha==\"${SERVER_SHA}\" and .created_at >= \"${SERVER_TAG_CREATED_AT}\") | .id" \
+              | head -n1)"
+            if [ -n "${run_id}" ]; then
+              break
+            fi
+            sleep "${interval}"
+            elapsed=$((elapsed + interval))
+          done
+
+          if [ -z "${run_id}" ]; then
+            echo "No aparecio el run de deploy de server para ${VERSION}."
+            exit 1
+          fi
+
+          echo "Run detectado: ${run_id}. Esperando conclusion..."
+          elapsed=0
+          while [ "${elapsed}" -lt "${timeout_seconds}" ]; do
+            status="$(gh api "repos/${SERVER_REPO}/actions/runs/${run_id}" --jq '.status')"
+            conclusion="$(gh api "repos/${SERVER_REPO}/actions/runs/${run_id}" --jq '.conclusion')"
+            echo "status=${status} conclusion=${conclusion}"
+
+            if [ "${status}" = "completed" ]; then
+              if [ "${conclusion}" != "success" ]; then
+                echo "El deploy del server no fue exitoso (${conclusion})."
+                exit 1
+              fi
+              break
+            fi
+
+            sleep "${interval}"
+            elapsed=$((elapsed + interval))
+          done
+
+          if [ "${elapsed}" -ge "${timeout_seconds}" ]; then
+            echo "Timeout esperando finalizacion del deploy del server."
+            exit 1
+          fi
+
+      - name: Create client tag
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+          VERSION: ${{ needs.prepare.outputs.next_version }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+            -X POST \
+            -f ref="refs/tags/${VERSION}" \
+            -f sha="${GITHUB_SHA}" >/dev/null
+          echo "Client tag ${VERSION} creado en ${GITHUB_SHA}"
+
+      - name: Create GitHub release (client)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_CROSS_REPO }}
+          VERSION: ${{ needs.prepare.outputs.next_version }}
+        run: |
+          notes_file="release-artifacts/release-notes-${VERSION}.md"
+          manifest_file="release-artifacts/release-manifest-${VERSION}.json"
+
+          gh release create "${VERSION}" "${manifest_file}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${VERSION}" \
+            --target "${GITHUB_SHA}" \
+            --notes-file "${notes_file}"
+
+      - name: Summary
+        env:
+          VERSION: ${{ needs.prepare.outputs.next_version }}
+          SERVER_SHA: ${{ needs.prepare.outputs.server_sha }}
+        run: |
+          {
+            echo "## Release completada"
+            echo "- Version: \`${VERSION}\`"
+            echo "- Client SHA: \`${GITHUB_SHA}\`"
+            echo "- Server SHA: \`${SERVER_SHA}\`"
+            echo "- Orden aplicado: server -> client"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  dry-run-summary:
+    name: Dry Run Summary
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ inputs.dry_run }}
+    steps:
+      - name: Summary
+        env:
+          VERSION: ${{ needs.prepare.outputs.next_version }}
+          SERVER_SHA: ${{ needs.prepare.outputs.server_sha }}
+        run: |
+          {
+            echo "## Dry run completado"
+            echo "- Version calculada: \`${VERSION}\`"
+            echo "- Client SHA: \`${GITHUB_SHA}\`"
+            echo "- Server SHA validado: \`${SERVER_SHA}\`"
+            echo "- No se crearon tags ni despliegues."
+          } >> "${GITHUB_STEP_SUMMARY}"
