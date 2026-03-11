@@ -676,8 +676,8 @@ export default function PosPage() {
           p: { xs: 2.25, md: 3 },
           border: "1px solid rgba(56, 189, 248, 0.14)",
           background:
-            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
-          boxShadow: "0 24px 64px rgba(2, 6, 23, 0.28)",
+            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
+          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.28)",
         }}
       >
         <Stack spacing={2.25}>
@@ -746,7 +746,7 @@ export default function PosPage() {
                     maxHeight: 420,
                     overflowY: "auto",
                     border: "1px solid rgba(56, 189, 248, 0.22)",
-                    backgroundColor: "#1a2540",
+                    backgroundColor: "#27272a",
                     boxShadow: "0 8px 40px rgba(0, 0, 0, 0.45)",
                   }}
                 >
@@ -786,7 +786,7 @@ export default function PosPage() {
                               py: 1.5,
                               textAlign: "left",
                               opacity: disabled ? 0.4 : 1,
-                              borderTop: index > 0 ? "1px solid rgba(148, 163, 184, 0.1)" : "none",
+                              borderTop: index > 0 ? "1px solid rgba(161, 161, 170, 0.1)" : "none",
                               transition: "background-color 120ms ease",
                               "&:hover": {
                                 backgroundColor: disabled ? "transparent" : "rgba(56, 189, 248, 0.08)",
@@ -814,7 +814,7 @@ export default function PosPage() {
                               </Avatar>
                               <Stack spacing={0.25} alignItems="flex-start" sx={{ minWidth: 0 }}>
                                 <Typography fontWeight={700} noWrap>{product.name}</Typography>
-                                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, letterSpacing: "0.04em" }}>
+                                <Typography variant="caption" sx={{ color: "#71717a", fontWeight: 600, letterSpacing: "0.04em" }}>
                                   {product.sku}
                                 </Typography>
                               </Stack>
@@ -831,9 +831,9 @@ export default function PosPage() {
                                   sx={{
                                     fontWeight: 700,
                                     fontSize: "0.7rem",
-                                    color: "#94a3b8",
-                                    backgroundColor: "rgba(148, 163, 184, 0.1)",
-                                    border: "1px solid rgba(148, 163, 184, 0.15)",
+                                    color: "#a1a1aa",
+                                    backgroundColor: "rgba(161, 161, 170, 0.1)",
+                                    border: "1px solid rgba(161, 161, 170, 0.15)",
                                   }}
                                 />
                               ) : (
@@ -853,9 +853,9 @@ export default function PosPage() {
           <Paper
             sx={{
               p: 2.5,
-              border: "1px solid rgba(148, 163, 184, 0.14)",
+              border: "1px solid rgba(161, 161, 170, 0.14)",
               background:
-                "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+                "linear-gradient(180deg, rgba(24, 24, 27, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
             }}
           >
             <Stack spacing={2}>
@@ -883,9 +883,9 @@ export default function PosPage() {
                         sx={{
                           p: 1.5,
                           borderRadius: 2.5,
-                          borderColor: "rgba(148, 163, 184, 0.16)",
+                          borderColor: "rgba(161, 161, 170, 0.16)",
                           background:
-                            "linear-gradient(180deg, rgba(30, 41, 59, 0.44) 0%, rgba(15, 23, 42, 0.42) 100%)",
+                            "linear-gradient(180deg, rgba(39, 39, 42, 0.44) 0%, rgba(9, 9, 11, 0.42) 100%)",
                         }}
                       >
                         <Stack spacing={1.25}>
@@ -995,9 +995,9 @@ export default function PosPage() {
           <Paper
             sx={{
               p: 2.5,
-              border: "1px solid rgba(148, 163, 184, 0.14)",
+              border: "1px solid rgba(161, 161, 170, 0.14)",
               background:
-                "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+                "linear-gradient(180deg, rgba(24, 24, 27, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
             }}
           >
             <Button
@@ -1053,8 +1053,8 @@ export default function PosPage() {
             top: { lg: 24 },
             border: "1px solid rgba(16, 185, 129, 0.16)",
             background:
-              "radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
-            boxShadow: "0 20px 48px rgba(2, 6, 23, 0.24)",
+              "radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 30%), linear-gradient(180deg, rgba(24, 24, 27, 0.99) 0%, rgba(9, 9, 11, 0.98) 100%)",
+            boxShadow: "0 20px 48px rgba(0, 0, 0, 0.24)",
           }}
         >
           <Stack spacing={2}>
@@ -1108,7 +1108,7 @@ export default function PosPage() {
               sx={{
                 background: "transparent",
                 boxShadow: "none",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
                 borderRadius: "12px !important",
                 "&::before": { display: "none" },
               }}
@@ -1211,13 +1211,13 @@ export default function PosPage() {
             borderRadius: 3,
             border: "1px solid rgba(56, 189, 248, 0.14)",
             background:
-              "radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+              "radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%), linear-gradient(180deg, rgba(24, 24, 27, 0.99) 0%, rgba(9, 9, 11, 0.98) 100%)",
           },
         }}
       >
         <DialogTitle
           sx={{
-            borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+            borderBottom: "1px solid rgba(161, 161, 170, 0.12)",
             pb: 2,
           }}
         >
@@ -1256,7 +1256,7 @@ export default function PosPage() {
               sx={{
                 background: "transparent",
                 boxShadow: "none",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
                 borderRadius: "12px !important",
                 "&::before": { display: "none" },
               }}
@@ -1372,7 +1372,7 @@ export default function PosPage() {
                   sx={{
                     "& .MuiToggleButtonGroup-grouped": {
                       borderRadius: "12px !important",
-                      border: "1px solid rgba(148, 163, 184, 0.16) !important",
+                      border: "1px solid rgba(161, 161, 170, 0.16) !important",
                       fontWeight: 700,
                     },
                   }}
@@ -1433,8 +1433,8 @@ export default function PosPage() {
               sx={{
                 p: 1.75,
                 borderRadius: 2,
-                border: "1px solid rgba(148, 163, 184, 0.18)",
-                background: "rgba(15, 23, 42, 0.58)",
+                border: "1px solid rgba(161, 161, 170, 0.18)",
+                background: "rgba(9, 9, 11, 0.58)",
               }}
             >
               <Stack spacing={1}>
@@ -1540,13 +1540,13 @@ export default function PosPage() {
             borderRadius: 3,
             border: "1px solid rgba(56, 189, 248, 0.14)",
             background:
-              "radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+              "radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%), linear-gradient(180deg, rgba(24, 24, 27, 0.99) 0%, rgba(9, 9, 11, 0.98) 100%)",
           },
         }}
       >
         <DialogTitle
           sx={{
-            borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+            borderBottom: "1px solid rgba(161, 161, 170, 0.12)",
             pb: 2,
           }}
         >
@@ -1650,13 +1650,13 @@ export default function PosPage() {
             borderRadius: 3,
             border: "1px solid rgba(16, 185, 129, 0.14)",
             background:
-              "radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%), linear-gradient(180deg, rgba(17, 24, 39, 0.99) 0%, rgba(15, 23, 42, 0.98) 100%)",
+              "radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%), linear-gradient(180deg, rgba(24, 24, 27, 0.99) 0%, rgba(9, 9, 11, 0.98) 100%)",
           },
         }}
       >
         <DialogTitle
           sx={{
-            borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+            borderBottom: "1px solid rgba(161, 161, 170, 0.12)",
             pb: 2,
           }}
         >

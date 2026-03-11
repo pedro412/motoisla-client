@@ -172,7 +172,7 @@ export function MediaAssetPickerDialog({
                     textTransform: "none",
                     display: "block",
                     borderRadius: 2,
-                    borderColor: selected ? undefined : "rgba(148, 163, 184, 0.3)",
+                    borderColor: selected ? undefined : "rgba(161, 161, 170, 0.3)",
                     opacity: disabled ? 0.55 : 1,
                   }}
                 >

@@ -115,10 +115,10 @@ function toneStyles(tone: "emerald" | "sky" | "amber" | "slate" | "teal" | "rose
       accent: "#f59e0b",
     },
     slate: {
-      border: "rgba(148, 163, 184, 0.26)",
-      glow: "rgba(71, 85, 105, 0.22)",
-      text: "#cbd5e1",
-      accent: "#94a3b8",
+      border: "rgba(161, 161, 170, 0.26)",
+      glow: "rgba(82, 82, 91, 0.22)",
+      text: "#d4d4d8",
+      accent: "#a1a1aa",
     },
     teal: {
       border: "rgba(45, 212, 191, 0.28)",
@@ -156,8 +156,8 @@ function KpiCard({
         p: 2.25,
         height: "100%",
         border: `1px solid ${style.border}`,
-        background: `linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, ${style.glow} 100%)`,
-        boxShadow: "0 18px 48px rgba(2, 6, 23, 0.22)",
+        background: `linear-gradient(180deg, rgba(9, 9, 11, 0.98) 0%, ${style.glow} 100%)`,
+        boxShadow: "0 18px 48px rgba(0, 0, 0, 0.22)",
       }}
     >
       <Stack spacing={1.25}>
@@ -192,9 +192,9 @@ function SectionCard({
       sx={{
         p: 2.5,
         height: "100%",
-        border: "1px solid rgba(148, 163, 184, 0.14)",
+        border: "1px solid rgba(161, 161, 170, 0.14)",
         background:
-          "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+          "linear-gradient(180deg, rgba(24, 24, 27, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
       }}
     >
       <Stack spacing={2}>
@@ -232,7 +232,7 @@ function EmptyRows({ label }: { label: string }) {
   return (
     <Box
       sx={{
-        border: "1px dashed rgba(148, 163, 184, 0.2)",
+        border: "1px dashed rgba(161, 161, 170, 0.2)",
         borderRadius: 2,
         p: 2,
         textAlign: "center",
@@ -293,7 +293,7 @@ function HorizontalRows<T extends object>({
                 height: 8,
                 borderRadius: 999,
                 overflow: "hidden",
-                backgroundColor: "rgba(148, 163, 184, 0.12)",
+                backgroundColor: "rgba(161, 161, 170, 0.12)",
               }}
             >
               <Box
@@ -387,8 +387,8 @@ export default function ReportsPage() {
           p: { xs: 2.25, md: 3 },
           border: "1px solid rgba(56, 189, 248, 0.14)",
           background:
-            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
-          boxShadow: "0 24px 64px rgba(2, 6, 23, 0.28)",
+            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
+          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.28)",
         }}
       >
         <Stack spacing={2.5}>
@@ -426,9 +426,9 @@ export default function ReportsPage() {
                 sx={{
                   fontWeight: 700,
                   borderRadius: 1.5,
-                  backgroundColor: "rgba(148, 163, 184, 0.12)",
-                  color: "#e2e8f0",
-                  border: "1px solid rgba(148, 163, 184, 0.16)",
+                  backgroundColor: "rgba(161, 161, 170, 0.12)",
+                  color: "#e4e4e7",
+                  border: "1px solid rgba(161, 161, 170, 0.16)",
                 }}
               />
             </Stack>
@@ -448,7 +448,7 @@ export default function ReportsPage() {
                 gap: 1,
                 "& .MuiToggleButtonGroup-grouped": {
                   borderRadius: "12px !important",
-                  border: "1px solid rgba(148, 163, 184, 0.16) !important",
+                  border: "1px solid rgba(161, 161, 170, 0.16) !important",
                 },
               }}
             >

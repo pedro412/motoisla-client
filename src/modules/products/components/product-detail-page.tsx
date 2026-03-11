@@ -116,7 +116,7 @@ export function ProductDetailPage() {
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
               }}
             >
               <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -133,7 +133,7 @@ export function ProductDetailPage() {
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
               }}
             >
               <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -150,7 +150,7 @@ export function ProductDetailPage() {
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
               }}
             >
               <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -167,7 +167,7 @@ export function ProductDetailPage() {
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
               }}
             >
               <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -187,9 +187,9 @@ export function ProductDetailPage() {
         sx={{
           p: { xs: 2.5, md: 3 },
           borderRadius: 4,
-          border: "1px solid rgba(148, 163, 184, 0.18)",
-          background: "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
-          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+          border: "1px solid rgba(161, 161, 170, 0.18)",
+          background: "linear-gradient(180deg, rgba(9, 9, 11, 0.94) 0%, rgba(24, 24, 27, 0.92) 100%)",
+          boxShadow: "0 24px 60px rgba(9, 9, 11, 0.2)",
         }}
       >
         <Stack spacing={2.5}>
@@ -232,9 +232,9 @@ export function ProductDetailPage() {
                 {product.name}
               </Typography>
               <Typography sx={{ color: "rgba(226, 232, 240, 0.76)" }}>SKU: {product.sku}</Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>Marca: {product.brand_name || "-"}</Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>Categoria: {product.product_type_name || "-"}</Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>
+              <Typography sx={{ color: "#e4e4e7" }}>Marca: {product.brand_name || "-"}</Typography>
+              <Typography sx={{ color: "#e4e4e7" }}>Categoria: {product.product_type_name || "-"}</Typography>
+              <Typography sx={{ color: "#e4e4e7" }}>
                 Precio compra + IVA 16%: {profitMetrics.costPriceWithTax === null ? "-" : formatCurrency(profitMetrics.costPriceWithTax)}
               </Typography>
               <Chip
@@ -260,7 +260,7 @@ export function ProductDetailPage() {
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
               }}
             >
               <Stack spacing={0.75}>
@@ -268,7 +268,7 @@ export function ProductDetailPage() {
                   Precios adicionales
                 </Typography>
                 {additionalPriceKeys.map((key) => (
-                  <Typography key={key} sx={{ color: "#e2e8f0" }}>
+                  <Typography key={key} sx={{ color: "#e4e4e7" }}>
                     {humanizeFieldName(key)}: {formatCurrency(product[key] as string | null)}
                   </Typography>
                 ))}
@@ -281,17 +281,17 @@ export function ProductDetailPage() {
               p: 2,
               borderRadius: 3,
               backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(148, 163, 184, 0.14)",
+              border: "1px solid rgba(161, 161, 170, 0.14)",
             }}
           >
             <Stack spacing={0.75}>
               <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#f8fafc" }}>
                 Metadatos
               </Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>ID: {product.id}</Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>Creado: {formatDateTime(product.created_at)}</Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>Actualizado: {formatDateTime(product.updated_at)}</Typography>
-              <Typography sx={{ color: "#e2e8f0" }}>
+              <Typography sx={{ color: "#e4e4e7" }}>ID: {product.id}</Typography>
+              <Typography sx={{ color: "#e4e4e7" }}>Creado: {formatDateTime(product.created_at)}</Typography>
+              <Typography sx={{ color: "#e4e4e7" }}>Actualizado: {formatDateTime(product.updated_at)}</Typography>
+              <Typography sx={{ color: "#e4e4e7" }}>
                 Imagen principal: {getPrimaryImageUrl(product.images, product.primary_image_id, false) ?? "No disponible"}
               </Typography>
             </Stack>

@@ -83,8 +83,8 @@ export default function CatalogPage() {
                       height: 72,
                       borderRadius: 2,
                       objectFit: "cover",
-                      bgcolor: "rgba(148, 163, 184, 0.14)",
-                      border: "1px solid rgba(148, 163, 184, 0.2)",
+                      bgcolor: "rgba(161, 161, 170, 0.14)",
+                      border: "1px solid rgba(161, 161, 170, 0.2)",
                     }}
                   />
                   <Box>

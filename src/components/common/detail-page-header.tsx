@@ -36,14 +36,14 @@ export function DetailPageHeader({
       sx={{
         p: { xs: 2.5, md: 3.5 },
         borderRadius: 4,
-        color: "#e2e8f0",
-        background: "linear-gradient(135deg, #0f172a 0%, #13213c 45%, #16324f 100%)",
-        border: "1px solid rgba(148, 163, 184, 0.18)",
-        boxShadow: "0 28px 60px rgba(15, 23, 42, 0.22)",
+        color: "#e4e4e7",
+        background: "linear-gradient(135deg, #09090b 0%, #1a1a1e 45%, #27272a 100%)",
+        border: "1px solid rgba(161, 161, 170, 0.18)",
+        boxShadow: "0 28px 60px rgba(9, 9, 11, 0.22)",
       }}
     >
       <Stack spacing={2.5}>
-        <Breadcrumbs separator="›" sx={{ color: "rgba(226, 232, 240, 0.6)" }}>
+        <Breadcrumbs separator="›" sx={{ color: "rgba(228, 228, 231, 0.6)" }}>
           {breadcrumbs.map((item, index) =>
             item.href ? (
               <MuiLink
@@ -56,7 +56,7 @@ export function DetailPageHeader({
                 {item.label}
               </MuiLink>
             ) : (
-              <Typography key={`${item.label}-${index}`} sx={{ color: "rgba(226, 232, 240, 0.88)", fontWeight: 700 }}>
+              <Typography key={`${item.label}-${index}`} sx={{ color: "rgba(228, 228, 231, 0.88)", fontWeight: 700 }}>
                 {item.label}
               </Typography>
             ),
@@ -78,8 +78,8 @@ export function DetailPageHeader({
                 startIcon={<ArrowBackRoundedIcon />}
                 sx={{
                   width: "fit-content",
-                  borderColor: "rgba(148, 163, 184, 0.22)",
-                  color: "#e2e8f0",
+                  borderColor: "rgba(161, 161, 170, 0.22)",
+                  color: "#e4e4e7",
                 }}
               >
                 {backLabel}
@@ -91,8 +91,8 @@ export function DetailPageHeader({
                 onClick={onBack}
                 sx={{
                   width: "fit-content",
-                  borderColor: "rgba(148, 163, 184, 0.22)",
-                  color: "#e2e8f0",
+                  borderColor: "rgba(161, 161, 170, 0.22)",
+                  color: "#e4e4e7",
                 }}
               >
                 {backLabel}
@@ -103,7 +103,7 @@ export function DetailPageHeader({
               <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
                 {title}
               </Typography>
-              {description ? <Typography sx={{ color: "rgba(226, 232, 240, 0.76)" }}>{description}</Typography> : null}
+              {description ? <Typography sx={{ color: "rgba(228, 228, 231, 0.76)" }}>{description}</Typography> : null}
             </Box>
           </Stack>
 
@@ -115,7 +115,7 @@ export function DetailPageHeader({
                   px: 2.5,
                   borderRadius: 2.5,
                   fontWeight: 800,
-                  boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
+                  boxShadow: "0 12px 24px rgba(9, 9, 11, 0.18)",
                 },
               }}
             >

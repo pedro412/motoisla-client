@@ -142,7 +142,7 @@ function KpiCard({ title, value, subtitle, tone }: { title: string; value: strin
         p: 2.25,
         height: "100%",
         border: `1px solid ${style.border}`,
-        background: `linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, ${style.glow} 100%)`,
+        background: `linear-gradient(180deg, rgba(9, 9, 11, 0.98) 0%, ${style.glow} 100%)`,
       }}
     >
       <Stack spacing={1}>
@@ -165,8 +165,8 @@ function SectionCard({ title, subtitle, children }: { title: string; subtitle: s
     <Paper
       sx={{
         p: 2.5,
-        border: "1px solid rgba(148, 163, 184, 0.14)",
-        background: "linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+        border: "1px solid rgba(161, 161, 170, 0.14)",
+        background: "linear-gradient(180deg, rgba(24, 24, 27, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
       }}
     >
       <Stack spacing={2}>
@@ -579,7 +579,7 @@ export default function ExpensesPage() {
           p: { xs: 2.25, md: 3 },
           border: "1px solid rgba(56, 189, 248, 0.14)",
           background:
-            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%)",
+            "radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 35%), radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 28%), linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(9, 9, 11, 0.96) 100%)",
         }}
       >
         <Stack spacing={2.5}>
@@ -609,7 +609,7 @@ export default function ExpensesPage() {
                 gap: 1,
                 "& .MuiToggleButtonGroup-grouped": {
                   borderRadius: "12px !important",
-                  border: "1px solid rgba(148, 163, 184, 0.16) !important",
+                  border: "1px solid rgba(161, 161, 170, 0.16) !important",
                 },
               }}
             >
@@ -759,9 +759,9 @@ export default function ExpensesPage() {
                                 alignSelf: "flex-start",
                                 borderRadius: 1.5,
                                 fontWeight: 700,
-                                backgroundColor: template.is_active ? "rgba(16, 185, 129, 0.14)" : "rgba(148, 163, 184, 0.12)",
-                                color: template.is_active ? "#a7f3d0" : "#e2e8f0",
-                                border: `1px solid ${template.is_active ? "rgba(16, 185, 129, 0.22)" : "rgba(148, 163, 184, 0.18)"}`,
+                                backgroundColor: template.is_active ? "rgba(16, 185, 129, 0.14)" : "rgba(161, 161, 170, 0.12)",
+                                color: template.is_active ? "#a7f3d0" : "#e4e4e7",
+                                border: `1px solid ${template.is_active ? "rgba(16, 185, 129, 0.22)" : "rgba(161, 161, 170, 0.18)"}`,
                               }}
                             />
                           </Stack>

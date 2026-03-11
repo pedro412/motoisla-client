@@ -143,11 +143,11 @@ export function ProductsListPage() {
         sx={{
           p: { xs: 2.5, md: 3.5 },
           borderRadius: 4,
-          color: "#e2e8f0",
+          color: "#e4e4e7",
           background:
-            "linear-gradient(135deg, #0f172a 0%, #13213c 45%, #16324f 100%)",
-          border: "1px solid rgba(148, 163, 184, 0.18)",
-          boxShadow: "0 28px 60px rgba(15, 23, 42, 0.22)",
+            "linear-gradient(135deg, #09090b 0%, #1a1a1e 45%, #27272a 100%)",
+          border: "1px solid rgba(161, 161, 170, 0.18)",
+          boxShadow: "0 28px 60px rgba(9, 9, 11, 0.22)",
         }}
       >
         <Stack spacing={2.5}>
@@ -205,9 +205,9 @@ export function ProductsListPage() {
                 label={`${inactiveProducts} inactivos`}
                 sx={{
                   fontWeight: 800,
-                  color: "#e2e8f0",
-                  backgroundColor: "rgba(148, 163, 184, 0.14)",
-                  border: "1px solid rgba(148, 163, 184, 0.2)",
+                  color: "#e4e4e7",
+                  backgroundColor: "rgba(161, 161, 170, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.2)",
                 }}
               />
             </Stack>
@@ -220,7 +220,7 @@ export function ProductsListPage() {
                   p: 2,
                   borderRadius: 3,
                   backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                 }}
               >
                 <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -237,7 +237,7 @@ export function ProductsListPage() {
                   p: 2,
                   borderRadius: 3,
                   backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                 }}
               >
                 <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -254,7 +254,7 @@ export function ProductsListPage() {
                   p: 2,
                   borderRadius: 3,
                   backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                 }}
               >
                 <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -275,7 +275,7 @@ export function ProductsListPage() {
                     p: 2,
                     borderRadius: 3,
                     backgroundColor: "rgba(255, 255, 255, 0.06)",
-                    border: "1px solid rgba(148, 163, 184, 0.14)",
+                    border: "1px solid rgba(161, 161, 170, 0.14)",
                   }}
                 >
                   <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -292,7 +292,7 @@ export function ProductsListPage() {
                     p: 2,
                     borderRadius: 3,
                     backgroundColor: "rgba(255, 255, 255, 0.06)",
-                    border: "1px solid rgba(148, 163, 184, 0.14)",
+                    border: "1px solid rgba(161, 161, 170, 0.14)",
                   }}
                 >
                   <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -309,7 +309,7 @@ export function ProductsListPage() {
                     p: 2,
                     borderRadius: 3,
                     backgroundColor: "rgba(255, 255, 255, 0.06)",
-                    border: "1px solid rgba(148, 163, 184, 0.14)",
+                    border: "1px solid rgba(161, 161, 170, 0.14)",
                   }}
                 >
                   <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -351,10 +351,10 @@ export function ProductsListPage() {
         sx={{
           p: { xs: 2, md: 2.5 },
           borderRadius: 4,
-          border: "1px solid rgba(148, 163, 184, 0.18)",
+          border: "1px solid rgba(161, 161, 170, 0.18)",
           background:
-            "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
-          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+            "linear-gradient(180deg, rgba(9, 9, 11, 0.94) 0%, rgba(24, 24, 27, 0.92) 100%)",
+          boxShadow: "0 24px 60px rgba(9, 9, 11, 0.2)",
         }}
       >
         <Stack spacing={2}>
@@ -367,7 +367,7 @@ export function ProductsListPage() {
             </Typography>
           </Stack>
 
-          <Divider sx={{ borderColor: "rgba(148, 163, 184, 0.16)" }} />
+          <Divider sx={{ borderColor: "rgba(161, 161, 170, 0.16)" }} />
 
           <TextField
             label="Buscar producto"
@@ -436,10 +436,10 @@ export function ProductsListPage() {
             <TableContainer
               sx={{
                 borderRadius: 3,
-                border: "1px solid rgba(148, 163, 184, 0.16)",
+                border: "1px solid rgba(161, 161, 170, 0.16)",
                 overflowX: "auto",
                 background:
-                  "linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(30, 41, 59, 0.34) 100%)",
+                  "linear-gradient(180deg, rgba(9, 9, 11, 0.4) 0%, rgba(39, 39, 42, 0.34) 100%)",
                 backdropFilter: "blur(6px)",
               }}
             >

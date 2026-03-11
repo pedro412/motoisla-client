@@ -403,7 +403,7 @@ export default function LayawayDetailPage() {
                   sx={{
                     "& .MuiToggleButtonGroup-grouped": {
                       borderRadius: "12px !important",
-                      border: "1px solid rgba(148, 163, 184, 0.16) !important",
+                      border: "1px solid rgba(161, 161, 170, 0.16) !important",
                       fontWeight: 700,
                     },
                   }}
