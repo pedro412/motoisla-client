@@ -19,7 +19,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -140,28 +139,9 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
           >
             <MenuRoundedIcon />
           </IconButton>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <Box
-              sx={{
-                position: "relative",
-                width: { xs: 36, md: 40 },
-                height: { xs: 36, md: 40 },
-                flexShrink: 0,
-              }}
-            >
-              <Image
-                src="/motoisla-logo-v2.png"
-                alt="MotoIsla"
-                fill
-                sizes="40px"
-                priority
-                style={{ objectFit: "contain" }}
-              />
-            </Box>
-            <Typography component="h1" variant="h6" fontWeight={600}>
-              {title}
-            </Typography>
-          </Box>
+          <Typography component="h1" variant="h6" fontWeight={600}>
+            {title}
+          </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
