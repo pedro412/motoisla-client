@@ -56,14 +56,14 @@ export default function SecuritySettingsPage() {
           {hasPIN ? (
             <>
               <CheckCircleRoundedIcon sx={{ color: "#22c55e" }} />
-              <Typography variant="body1" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body1" sx={{ color: "#a1a1aa" }}>
                 PIN configurado
               </Typography>
             </>
           ) : (
             <>
-              <RemoveCircleRoundedIcon sx={{ color: "#64748b" }} />
-              <Typography variant="body1" sx={{ color: "#94a3b8" }}>
+              <RemoveCircleRoundedIcon sx={{ color: "#71717a" }} />
+              <Typography variant="body1" sx={{ color: "#a1a1aa" }}>
                 Sin PIN — se usará contraseña para desbloquear
               </Typography>
             </>
@@ -85,7 +85,7 @@ export default function SecuritySettingsPage() {
         <Typography variant="h6" gutterBottom>
           Bloqueo por inactividad
         </Typography>
-        <Typography variant="body2" sx={{ color: "#94a3b8", mb: 2 }}>
+        <Typography variant="body2" sx={{ color: "#a1a1aa", mb: 2 }}>
           La pantalla se bloqueará automáticamente después del tiempo seleccionado.
         </Typography>
         <TextField
@@ -260,7 +260,7 @@ function RemovePinDialog({
       <DialogTitle>Eliminar PIN</DialogTitle>
       <DialogContent>
         <Stack spacing={2} component="form" id="remove-pin-form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "#a1a1aa" }}>
             Para desbloquear tendrás que usar tu contraseña completa.
           </Typography>
           <TextField

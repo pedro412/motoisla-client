@@ -93,13 +93,15 @@ src/
 Full spec: `.interface-design/system.md` — **read this before building any UI**.
 
 Key points:
-- Dark blue-slate theme: base `#0f172a` → card `#131d2e` → elevated `#1a2540`
+- Dark neutral zinc theme: base `#09090b` → card `#18181b` → elevated `#27272a`
+- Font: Inter (via `--font-inter`)
 - Single accent: `#38bdf8` (sky-400)
+- Primary button: solid `#0ea5e9`, hover `#0284c7` (no gradient)
 - MUI theme handles TextField, Button, Chip, Drawer, Table, Alert, Dialog, Skeleton automatically — no per-page sx needed for these
 - Chip semantic colors (status/state) require per-component sx (see system.md)
 - Page header pattern, KpiCard pattern, and Section Card pattern are documented in system.md
-- Sidebar Drawer bg = page bg (#0f172a) — unified surface
-- Topbar: transparent + `rgba(15,23,42,0.85)` + backdrop-blur 12px
+- Sidebar Drawer bg = page bg (#09090b) — unified surface
+- Topbar: transparent + `rgba(9,9,11,0.85)` + backdrop-blur 12px
 
 ## Card instrument (debit/credit distinction)
 

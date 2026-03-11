@@ -61,8 +61,8 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
   const movements = movementsQuery.data?.results ?? [];
   const totalPages = Math.max(1, Math.ceil((movementsQuery.data?.count ?? 0) / PAGE_SIZE));
   const tableHeaderCellSx = {
-    backgroundColor: "rgba(15, 23, 42, 0.38)",
-    borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
+    backgroundColor: "rgba(9, 9, 11, 0.38)",
+    borderBottom: "1px solid rgba(161, 161, 170, 0.14)",
     py: 1.5,
   } as const;
 
@@ -71,9 +71,9 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
       sx={{
         p: { xs: 2.5, md: 3 },
         borderRadius: 4,
-        border: "1px solid rgba(148, 163, 184, 0.18)",
-        background: "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
-        boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+        border: "1px solid rgba(161, 161, 170, 0.18)",
+        background: "linear-gradient(180deg, rgba(9, 9, 11, 0.94) 0%, rgba(24, 24, 27, 0.92) 100%)",
+        boxShadow: "0 24px 60px rgba(9, 9, 11, 0.2)",
       }}
     >
       <Stack spacing={2}>
@@ -108,9 +108,9 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
           <TableContainer
             sx={{
               borderRadius: 3,
-              border: "1px solid rgba(148, 163, 184, 0.16)",
+              border: "1px solid rgba(161, 161, 170, 0.16)",
               overflowX: "auto",
-              background: "linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(30, 41, 59, 0.34) 100%)",
+              background: "linear-gradient(180deg, rgba(9, 9, 11, 0.4) 0%, rgba(39, 39, 42, 0.34) 100%)",
               backdropFilter: "blur(6px)",
             }}
           >
@@ -120,7 +120,7 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
                 backgroundColor: "transparent",
                 "& .MuiTableCell-root": {
                   backgroundColor: "transparent",
-                  color: "#e2e8f0",
+                  color: "#e4e4e7",
                 },
               }}
             >
@@ -168,7 +168,7 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
                         backgroundColor: alpha("#60a5fa", 0.08),
                       },
                       "& > .MuiTableCell-root": {
-                        borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
+                        borderBottom: "1px solid rgba(161, 161, 170, 0.12)",
                         py: 1.6,
                       },
                     }}
@@ -199,10 +199,10 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
                       </Stack>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ color: "#e2e8f0" }}>{movement.note?.trim() ? movement.note : "-"}</Typography>
+                      <Typography sx={{ color: "#e4e4e7" }}>{movement.note?.trim() ? movement.note : "-"}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ fontWeight: 700, color: "#e2e8f0" }}>
+                      <Typography sx={{ fontWeight: 700, color: "#e4e4e7" }}>
                         {movement.created_by_username || movement.created_by}
                       </Typography>
                     </TableCell>
@@ -218,7 +218,7 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
             variant="outlined"
             onClick={() => setMovementPage((current) => current - 1)}
             disabled={movementPage <= 1 || movementsQuery.isLoading}
-            sx={{ borderColor: "rgba(148, 163, 184, 0.22)", color: "#e2e8f0" }}
+            sx={{ borderColor: "rgba(161, 161, 170, 0.22)", color: "#e4e4e7" }}
           >
             Anterior
           </Button>
@@ -226,7 +226,7 @@ export function ProductMovementsTable({ productId }: ProductMovementsTableProps)
             variant="outlined"
             onClick={() => setMovementPage((current) => current + 1)}
             disabled={movementsQuery.isLoading || !movementsQuery.data?.next}
-            sx={{ borderColor: "rgba(148, 163, 184, 0.22)", color: "#e2e8f0" }}
+            sx={{ borderColor: "rgba(161, 161, 170, 0.22)", color: "#e4e4e7" }}
           >
             Siguiente
           </Button>

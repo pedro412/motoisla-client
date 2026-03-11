@@ -123,9 +123,9 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
       color="transparent"
       elevation={0}
       sx={{
-        backgroundColor: "rgba(15, 23, 42, 0.85)",
+        backgroundColor: "rgba(9, 9, 11, 0.85)",
         backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(148, 163, 184, 0.08)",
+        borderBottom: "1px solid rgba(161, 161, 170, 0.08)",
       }}
     >
       <Toolbar sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
@@ -147,7 +147,7 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {showPrinterStatus ? (
             <Tooltip title={printerStatus === "ok" ? "Impresora lista" : "Impresora no detectada"}>
-              <IconButton size="small" sx={{ color: printerStatus === "ok" ? "#22c55e" : "#475569" }}>
+              <IconButton size="small" sx={{ color: printerStatus === "ok" ? "#22c55e" : "#52525b" }}>
                 <PrintRoundedIcon fontSize="small" />
               </IconButton>
             </Tooltip>

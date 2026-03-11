@@ -63,7 +63,7 @@ function statusLabel(status: LayawayStatus) {
 }
 
 const tableHeaderCellSx = {
-  bgcolor: "rgba(148, 163, 184, 0.08)",
+  bgcolor: "rgba(161, 161, 170, 0.08)",
   borderBottom: "1px solid",
   borderColor: "divider",
   "& .MuiTypography-root": {

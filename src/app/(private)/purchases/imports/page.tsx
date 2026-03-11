@@ -92,9 +92,9 @@ function getMatchStatusVisual(status: EditableImportLine["match_status"]) {
 const darkPanelSx = {
   p: { xs: 2.5, md: 3 },
   borderRadius: 4,
-  border: "1px solid rgba(148, 163, 184, 0.18)",
-  background: "linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.92) 100%)",
-  boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+  border: "1px solid rgba(161, 161, 170, 0.18)",
+  background: "linear-gradient(180deg, rgba(9, 9, 11, 0.94) 0%, rgba(24, 24, 27, 0.92) 100%)",
+  boxShadow: "0 24px 60px rgba(9, 9, 11, 0.2)",
   "& .MuiInputLabel-root": {
     color: "rgba(226, 232, 240, 0.72)",
   },
@@ -106,13 +106,13 @@ const darkPanelSx = {
   },
   "& .MuiOutlinedInput-root": {
     borderRadius: 3,
-    backgroundColor: "rgba(15, 23, 42, 0.36)",
+    backgroundColor: "rgba(9, 9, 11, 0.36)",
     color: "#f8fafc",
     "& fieldset": {
-      borderColor: "rgba(148, 163, 184, 0.18)",
+      borderColor: "rgba(161, 161, 170, 0.18)",
     },
     "&:hover fieldset": {
-      borderColor: "rgba(148, 163, 184, 0.28)",
+      borderColor: "rgba(161, 161, 170, 0.28)",
     },
     "&.Mui-focused fieldset": {
       borderColor: "rgba(96, 165, 250, 0.52)",
@@ -424,12 +424,12 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
       variant="outlined"
       sx={{
         borderRadius: 3.5,
-        borderColor: draft.is_selected ? "rgba(96, 165, 250, 0.28)" : "rgba(148, 163, 184, 0.14)",
+        borderColor: draft.is_selected ? "rgba(96, 165, 250, 0.28)" : "rgba(161, 161, 170, 0.14)",
         background:
           draft.is_selected
-            ? "linear-gradient(180deg, rgba(15, 23, 42, 0.68) 0%, rgba(30, 41, 59, 0.6) 100%)"
-            : "linear-gradient(180deg, rgba(15, 23, 42, 0.52) 0%, rgba(30, 41, 59, 0.48) 100%)",
-        boxShadow: draft.is_selected ? "0 18px 40px rgba(15, 23, 42, 0.18)" : "none",
+            ? "linear-gradient(180deg, rgba(9, 9, 11, 0.68) 0%, rgba(39, 39, 42, 0.6) 100%)"
+            : "linear-gradient(180deg, rgba(9, 9, 11, 0.52) 0%, rgba(39, 39, 42, 0.48) 100%)",
+        boxShadow: draft.is_selected ? "0 18px 40px rgba(9, 9, 11, 0.18)" : "none",
         "& .MuiInputLabel-root": {
           color: "rgba(226, 232, 240, 0.72)",
         },
@@ -441,13 +441,13 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
         },
         "& .MuiOutlinedInput-root": {
           borderRadius: 2.5,
-          backgroundColor: "rgba(15, 23, 42, 0.3)",
+          backgroundColor: "rgba(9, 9, 11, 0.3)",
           color: "#f8fafc",
           "& fieldset": {
-            borderColor: "rgba(148, 163, 184, 0.16)",
+            borderColor: "rgba(161, 161, 170, 0.16)",
           },
           "&:hover fieldset": {
-            borderColor: "rgba(148, 163, 184, 0.26)",
+            borderColor: "rgba(161, 161, 170, 0.26)",
           },
           "&.Mui-focused fieldset": {
             borderColor: "rgba(96, 165, 250, 0.52)",
@@ -467,7 +467,7 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                 }}
                 sx={{ color: "rgba(191, 219, 254, 0.75)" }}
               />
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#e2e8f0" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#e4e4e7" }}>
                 Línea {draft.line_no}
               </Typography>
             </Stack>
@@ -477,9 +477,9 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                 label={draft.is_selected ? "Incluida" : "Omitida"}
                 sx={{
                   fontWeight: 800,
-                  color: draft.is_selected ? "#dbeafe" : "#e2e8f0",
-                  backgroundColor: draft.is_selected ? "rgba(37, 99, 235, 0.14)" : "rgba(148, 163, 184, 0.14)",
-                  border: `1px solid ${draft.is_selected ? "rgba(37, 99, 235, 0.22)" : "rgba(148, 163, 184, 0.16)"}`,
+                  color: draft.is_selected ? "#dbeafe" : "#e4e4e7",
+                  backgroundColor: draft.is_selected ? "rgba(37, 99, 235, 0.14)" : "rgba(161, 161, 170, 0.14)",
+                  border: `1px solid ${draft.is_selected ? "rgba(37, 99, 235, 0.22)" : "rgba(161, 161, 170, 0.16)"}`,
                 }}
               />
               <Chip
@@ -510,7 +510,7 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                 py: 1,
                 borderRadius: 2.5,
                 backgroundColor: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(148, 163, 184, 0.12)",
+                border: "1px solid rgba(161, 161, 170, 0.12)",
                 minWidth: { xs: "100%", md: 240 },
               }}
             >
@@ -600,10 +600,10 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                   p: 1.25,
                   borderRadius: 2.5,
                   backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(148, 163, 184, 0.12)",
+                  border: "1px solid rgba(161, 161, 170, 0.12)",
                 }}
               >
-                <Typography variant="caption" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+                <Typography variant="caption" sx={{ color: "#e4e4e7", fontWeight: 700 }}>
                   Margen proyectado: {formatMoney(rowMarkupAmount(draft))}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "rgba(191, 219, 254, 0.72)" }}>
@@ -695,8 +695,8 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                   width: 104,
                   height: 104,
                   borderRadius: 2,
-                  border: "1px solid rgba(148, 163, 184, 0.2)",
-                  backgroundColor: "rgba(15, 23, 42, 0.55)",
+                  border: "1px solid rgba(161, 161, 170, 0.2)",
+                  backgroundColor: "rgba(9, 9, 11, 0.55)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -747,8 +747,8 @@ const ProductPreviewCard = memo(function ProductPreviewCard({
                   sx={{
                     p: 0.75,
                     width: 94,
-                    borderColor: "rgba(148, 163, 184, 0.25)",
-                    backgroundColor: "rgba(15, 23, 42, 0.35)",
+                    borderColor: "rgba(161, 161, 170, 0.25)",
+                    backgroundColor: "rgba(9, 9, 11, 0.35)",
                   }}
                 >
                   <Stack spacing={0.5}>
@@ -1159,10 +1159,10 @@ export default function PurchasesImportsPage() {
         sx={{
           p: { xs: 2.5, md: 3.5 },
           borderRadius: 4,
-          color: "#e2e8f0",
-          background: "linear-gradient(135deg, #0f172a 0%, #13213c 45%, #16324f 100%)",
-          border: "1px solid rgba(148, 163, 184, 0.18)",
-          boxShadow: "0 28px 60px rgba(15, 23, 42, 0.22)",
+          color: "#e4e4e7",
+          background: "linear-gradient(135deg, #09090b 0%, #1a1a1e 45%, #27272a 100%)",
+          border: "1px solid rgba(161, 161, 170, 0.18)",
+          boxShadow: "0 28px 60px rgba(9, 9, 11, 0.22)",
         }}
       >
         <Stack spacing={2.5}>
@@ -1210,7 +1210,7 @@ export default function PurchasesImportsPage() {
                   p: 2,
                   borderRadius: 3,
                   backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                 }}
               >
                 <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -1227,7 +1227,7 @@ export default function PurchasesImportsPage() {
                   p: 2,
                   borderRadius: 3,
                   backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                 }}
               >
                 <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -1244,7 +1244,7 @@ export default function PurchasesImportsPage() {
                   p: 2,
                   borderRadius: 3,
                   backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                 }}
               >
                 <Typography variant="overline" sx={{ color: "rgba(191, 219, 254, 0.8)", fontWeight: 800 }}>
@@ -1407,19 +1407,19 @@ export default function PurchasesImportsPage() {
             />
           ))}
 
-          <Divider sx={{ borderColor: "rgba(148, 163, 184, 0.16)" }} />
+          <Divider sx={{ borderColor: "rgba(161, 161, 170, 0.16)" }} />
           <Box
             sx={{
               p: 2,
               borderRadius: 3,
               backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(148, 163, 184, 0.12)",
+              border: "1px solid rgba(161, 161, 170, 0.12)",
             }}
           >
-            <Typography sx={{ color: "#e2e8f0" }}>Total artículos seleccionados: {selectedItemsCount}</Typography>
-            <Typography sx={{ color: "#e2e8f0" }}>Total piezas seleccionadas: {selectedPiecesCount.toFixed(2)}</Typography>
-            <Typography sx={{ color: "#e2e8f0" }}>Subtotal líneas seleccionadas: {formatMoney(computedSubtotal)}</Typography>
-            <Typography sx={{ color: "#e2e8f0" }}>IVA (16%): {formatMoney(parseAmount(tax || toMoney(computedTax)))}</Typography>
+            <Typography sx={{ color: "#e4e4e7" }}>Total artículos seleccionados: {selectedItemsCount}</Typography>
+            <Typography sx={{ color: "#e4e4e7" }}>Total piezas seleccionadas: {selectedPiecesCount.toFixed(2)}</Typography>
+            <Typography sx={{ color: "#e4e4e7" }}>Subtotal líneas seleccionadas: {formatMoney(computedSubtotal)}</Typography>
+            <Typography sx={{ color: "#e4e4e7" }}>IVA (16%): {formatMoney(parseAmount(tax || toMoney(computedTax)))}</Typography>
             <Typography variant="h6" sx={{ fontWeight: 900, color: "#f8fafc" }}>
               Total: {formatMoney(parseAmount(total || toMoney(computedTotal)))}
             </Typography>

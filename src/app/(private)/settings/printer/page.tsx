@@ -155,7 +155,7 @@ export default function PrinterSettingsPage() {
     }
   }
 
-  const statusColor = status === "ok" ? "#22c55e" : status === "error" ? "#ef4444" : "#475569";
+  const statusColor = status === "ok" ? "#22c55e" : status === "error" ? "#ef4444" : "#52525b";
   const StatusIcon =
     status === "ok"
       ? CheckCircleRoundedIcon
@@ -296,7 +296,7 @@ export default function PrinterSettingsPage() {
                   px: 2.5,
                   py: 1.25,
                   borderRadius: "10px !important",
-                  border: "1px solid rgba(148, 163, 184, 0.2) !important",
+                  border: "1px solid rgba(161, 161, 170, 0.2) !important",
                   "&.Mui-selected": {
                     backgroundColor: "rgba(56, 189, 248, 0.14)",
                     borderColor: "rgba(56, 189, 248, 0.4) !important",
@@ -326,7 +326,7 @@ export default function PrinterSettingsPage() {
                 p: 1.5,
                 borderRadius: 2,
                 backgroundColor: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(148, 163, 184, 0.14)",
+                border: "1px solid rgba(161, 161, 170, 0.14)",
                 overflowX: "auto",
               }}
             >
@@ -335,7 +335,7 @@ export default function PrinterSettingsPage() {
                   margin: 0,
                   fontFamily: "'Courier New', Courier, monospace",
                   fontSize: "11px",
-                  color: "#94a3b8",
+                  color: "#a1a1aa",
                   whiteSpace: "pre",
                 }}
               >
@@ -394,7 +394,7 @@ export default function PrinterSettingsPage() {
                   p: 1.5,
                   borderRadius: 2,
                   backgroundColor: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(148, 163, 184, 0.14)",
+                  border: "1px solid rgba(161, 161, 170, 0.14)",
                   overflowX: "auto",
                 }}
               >
@@ -403,7 +403,7 @@ export default function PrinterSettingsPage() {
                     margin: 0,
                     fontFamily: "'Courier New', Courier, monospace",
                     fontSize: "11px",
-                    color: "#94a3b8",
+                    color: "#a1a1aa",
                     whiteSpace: "pre",
                   }}
                 >
@@ -453,7 +453,7 @@ export default function PrinterSettingsPage() {
               p: 2,
               borderRadius: 2,
               backgroundColor: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(148, 163, 184, 0.14)",
+              border: "1px solid rgba(161, 161, 170, 0.14)",
               overflowX: "auto",
             }}
           >
@@ -462,7 +462,7 @@ export default function PrinterSettingsPage() {
                 margin: 0,
                 fontFamily: "'Courier New', Courier, monospace",
                 fontSize: "11px",
-                color: "#94a3b8",
+                color: "#a1a1aa",
                 whiteSpace: "pre",
               }}
             >
@@ -514,8 +514,8 @@ export default function PrinterSettingsPage() {
             sx={{
               alignSelf: "flex-start",
               fontWeight: 800,
-              background: "linear-gradient(135deg, #0369a1 0%, #0284c7 100%)",
-              "&:hover": { background: "linear-gradient(135deg, #075985 0%, #0369a1 100%)" },
+              backgroundColor: "#0ea5e9",
+              "&:hover": { backgroundColor: "#0284c7" },
             }}
           >
             {testPrinting ? "Imprimiendo..." : "Imprimir ticket de prueba"}

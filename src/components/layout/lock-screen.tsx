@@ -49,10 +49,10 @@ function Clock() {
 
   return (
     <Box sx={{ textAlign: "center", mb: 6 }}>
-      <Typography variant="h1" sx={{ fontWeight: 300, color: "#f1f5f9", fontSize: { xs: "4rem", md: "6rem" }, lineHeight: 1 }}>
+      <Typography variant="h1" sx={{ fontWeight: 300, color: "#fafafa", fontSize: { xs: "4rem", md: "6rem" }, lineHeight: 1 }}>
         {time}
       </Typography>
-      <Typography variant="h6" sx={{ color: "#94a3b8", textTransform: "capitalize", mt: 1 }}>
+      <Typography variant="h6" sx={{ color: "#a1a1aa", textTransform: "capitalize", mt: 1 }}>
         {date}
       </Typography>
     </Box>
@@ -139,7 +139,7 @@ function PinInput({
                   textAlign: "center",
                   fontSize: "1.5rem",
                   fontWeight: 600,
-                  backgroundColor: "#1a2540",
+                  backgroundColor: "#27272a",
                 },
               },
               htmlInput: {
@@ -287,7 +287,7 @@ export function LockScreen() {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        backgroundColor: "#0f172a",
+        backgroundColor: "#09090b",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -319,7 +319,7 @@ export function LockScreen() {
                     height: 64,
                     fontSize: "1.5rem",
                     fontWeight: 600,
-                    backgroundColor: "#1e3a5f",
+                    backgroundColor: "#27272a",
                     color: "#38bdf8",
                     mx: "auto",
                     mb: 1,
@@ -327,10 +327,10 @@ export function LockScreen() {
                 >
                   {getInitials(profile)}
                 </Avatar>
-                <Typography variant="body1" sx={{ color: "#f1f5f9", fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ color: "#fafafa", fontWeight: 500 }}>
                   {getDisplayName(profile)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "#64748b" }}>
+                <Typography variant="caption" sx={{ color: "#71717a" }}>
                   {profile.role}
                 </Typography>
               </Box>
@@ -339,7 +339,7 @@ export function LockScreen() {
 
           <Button
             variant="text"
-            sx={{ mt: 4, color: "#94a3b8" }}
+            sx={{ mt: 4, color: "#a1a1aa" }}
             onClick={() => {
               setScreen("full-login");
               setError(null);
@@ -358,7 +358,7 @@ export function LockScreen() {
               height: 72,
               fontSize: "1.75rem",
               fontWeight: 600,
-              backgroundColor: "#1e3a5f",
+              backgroundColor: "#27272a",
               color: "#38bdf8",
               mx: "auto",
               mb: 1,
@@ -367,11 +367,11 @@ export function LockScreen() {
           >
             {getInitials(selectedProfile)}
           </Avatar>
-          <Typography variant="h6" sx={{ color: "#f1f5f9", mb: 3 }}>
+          <Typography variant="h6" sx={{ color: "#fafafa", mb: 3 }}>
             {getDisplayName(selectedProfile)}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 2 }}>
+          <Typography variant="body2" sx={{ color: "#a1a1aa", mb: 2 }}>
             Ingresa tu PIN
           </Typography>
 
@@ -386,10 +386,10 @@ export function LockScreen() {
           {submitting && <CircularProgress size={24} sx={{ mt: 2 }} />}
 
           <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
-            <Button variant="text" sx={{ color: "#94a3b8" }} onClick={() => { setScreen("profiles"); setError(null); }}>
+            <Button variant="text" sx={{ color: "#a1a1aa" }} onClick={() => { setScreen("profiles"); setError(null); }}>
               Atrás
             </Button>
-            <Button variant="text" sx={{ color: "#94a3b8" }} onClick={() => { setScreen("password"); setPassword(""); setError(null); }}>
+            <Button variant="text" sx={{ color: "#a1a1aa" }} onClick={() => { setScreen("password"); setPassword(""); setError(null); }}>
               Usar contraseña
             </Button>
           </Stack>
@@ -404,7 +404,7 @@ export function LockScreen() {
               height: 72,
               fontSize: "1.75rem",
               fontWeight: 600,
-              backgroundColor: "#1e3a5f",
+              backgroundColor: "#27272a",
               color: "#38bdf8",
               mx: "auto",
               mb: 1,
@@ -413,7 +413,7 @@ export function LockScreen() {
           >
             {getInitials(selectedProfile)}
           </Avatar>
-          <Typography variant="h6" sx={{ color: "#f1f5f9", mb: 3 }}>
+          <Typography variant="h6" sx={{ color: "#fafafa", mb: 3 }}>
             {getDisplayName(selectedProfile)}
           </Typography>
 
@@ -433,11 +433,11 @@ export function LockScreen() {
           </Stack>
 
           <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 2 }}>
-            <Button variant="text" sx={{ color: "#94a3b8" }} onClick={() => { setScreen("profiles"); setError(null); }}>
+            <Button variant="text" sx={{ color: "#a1a1aa" }} onClick={() => { setScreen("profiles"); setError(null); }}>
               Atrás
             </Button>
             {selectedProfile.hasPIN && (
-              <Button variant="text" sx={{ color: "#94a3b8" }} onClick={() => { setScreen("pin"); setError(null); }}>
+              <Button variant="text" sx={{ color: "#a1a1aa" }} onClick={() => { setScreen("pin"); setError(null); }}>
                 Usar PIN
               </Button>
             )}
@@ -447,7 +447,7 @@ export function LockScreen() {
 
       {screen === "full-login" && (
         <Box sx={{ textAlign: "center", maxWidth: 360, width: "100%" }}>
-          <Typography variant="h6" sx={{ color: "#f1f5f9", mb: 3 }}>
+          <Typography variant="h6" sx={{ color: "#fafafa", mb: 3 }}>
             Iniciar sesión
           </Typography>
 
@@ -473,10 +473,10 @@ export function LockScreen() {
           </Stack>
 
           <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 2 }}>
-            <Button variant="text" sx={{ color: "#94a3b8" }} onClick={() => { setScreen("profiles"); setError(null); }}>
+            <Button variant="text" sx={{ color: "#a1a1aa" }} onClick={() => { setScreen("profiles"); setError(null); }}>
               Atrás
             </Button>
-            <Button variant="text" sx={{ color: "#94a3b8" }} onClick={handleGoToLogin}>
+            <Button variant="text" sx={{ color: "#a1a1aa" }} onClick={handleGoToLogin}>
               Ir a login completo
             </Button>
           </Stack>

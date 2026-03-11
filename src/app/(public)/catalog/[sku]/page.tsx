@@ -56,8 +56,8 @@ export default function CatalogDetailPage() {
                   maxHeight: 360,
                   objectFit: "contain",
                   borderRadius: 2,
-                  backgroundColor: "rgba(148, 163, 184, 0.08)",
-                  border: "1px solid rgba(148, 163, 184, 0.16)",
+                  backgroundColor: "rgba(161, 161, 170, 0.08)",
+                  border: "1px solid rgba(161, 161, 170, 0.16)",
                 }}
               />
             </Stack>

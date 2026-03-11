@@ -619,7 +619,7 @@ function ProductEditFormContent({ product, mode }: ProductEditFormContentProps) 
           <Button
             variant="outlined"
             onClick={() => router.push(isCreate ? "/products" : `/products/${product!.id}`)}
-            sx={{ borderColor: "rgba(148, 163, 184, 0.22)", color: "#e2e8f0" }}
+            sx={{ borderColor: "rgba(161, 161, 170, 0.22)", color: "#e4e4e7" }}
           >
             Cancelar
           </Button>
