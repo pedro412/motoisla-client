@@ -1,4 +1,5 @@
 import { Box, Container, Typography } from "@mui/material";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 interface AuthLayoutProps {
@@ -8,9 +9,26 @@ interface AuthLayoutProps {
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <Container maxWidth="sm" sx={{ minHeight: "100dvh", py: 8, display: "flex", flexDirection: "column" }}>
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <Box
+          sx={{
+            position: "relative",
+            width: { xs: 180, sm: 220 },
+            height: { xs: 180, sm: 220 },
+            mb: 1.5,
+          }}
+        >
+          <Image
+            src="/motoisla-logo.png"
+            alt="MotoIsla"
+            fill
+            sizes="(max-width: 600px) 180px, 220px"
+            priority
+            style={{ objectFit: "contain" }}
+          />
+        </Box>
         <Typography component="h1" variant="h4" fontWeight={700}>
-          MotoIsla Client
+          Panel Interno
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Inicia sesión para continuar en el panel interno.
