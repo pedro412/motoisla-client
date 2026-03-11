@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           }}
         >
           <Image
-            src="/motoisla-logo.png"
+            src="/motoisla-logo-v2.png"
             alt="MotoIsla"
             fill
             sizes="(max-width: 600px) 180px, 220px"

@@ -150,7 +150,7 @@ export function AppTopbar({ title, onOpenMobileMenu }: AppTopbarProps) {
               }}
             >
               <Image
-                src="/motoisla-logo.png"
+                src="/motoisla-logo-v2.png"
                 alt="MotoIsla"
                 fill
                 sizes="40px"
