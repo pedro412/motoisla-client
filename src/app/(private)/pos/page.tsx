@@ -6,6 +6,9 @@ import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Avatar,
   Box,
@@ -27,6 +30,8 @@ import {
   Paper,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -35,7 +40,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "@/lib/api/errors";
 import { customerService } from "@/modules/customers/services/customer.service";
 import { layawayService } from "@/modules/layaway/services/layaway.service";
-import type { CardCommissionPlan, CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
+import type { CardCommissionPlan, CardInstrument, CardType, PaymentMethod, ProductSearchItem, SaleResponse } from "@/lib/types/sales";
 import type { LayawayDetailResponse } from "@/lib/types/layaway";
 import { salesService } from "@/modules/sales/services/sales.service";
 import { getPrimaryImageUrl } from "@/modules/products/image-upload";
@@ -167,6 +172,7 @@ export default function PosPage() {
   const [layawayDeposit, setLayawayDeposit] = useState("");
   const [layawayNotes, setLayawayNotes] = useState("");
   const [layawayExpiresAt, setLayawayExpiresAt] = useState("");
+  const [cardInstrument, setCardInstrument] = useState<CardInstrument>("DEBIT");
   const [useInstallments, setUseInstallments] = useState(false);
   const [selectedInstallmentPlanId, setSelectedInstallmentPlanId] = useState("");
   const [cashReceived, setCashReceived] = useState("");
@@ -189,13 +195,17 @@ export default function PosPage() {
   });
 
   const cardPlans = cardPlansQuery.data?.results;
+  const filteredCardPlans = useMemo(
+    () => cardPlans?.filter((plan) => plan.card_instrument === cardInstrument) ?? [],
+    [cardPlans, cardInstrument],
+  );
   const normalCardPlan = useMemo(
-    () => cardPlans?.find((plan) => plan.installments_months === 0) ?? null,
-    [cardPlans],
+    () => filteredCardPlans.find((plan) => plan.installments_months === 0) ?? null,
+    [filteredCardPlans],
   );
   const installmentPlans = useMemo(
-    () => cardPlans?.filter((plan) => plan.installments_months > 0) ?? [],
-    [cardPlans],
+    () => filteredCardPlans.filter((plan) => plan.installments_months > 0),
+    [filteredCardPlans],
   );
 
   useEffect(() => {
@@ -382,12 +392,13 @@ export default function PosPage() {
                 amount: remainingAfterCredit.toFixed(2),
                 card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
                 card_type: paymentMethod === "CARD" ? legacyCardTypeForPlan(selectedCardPlan) : undefined,
+                card_instrument: paymentMethod === "CARD" ? cardInstrument : undefined,
               },
             ] as const)
           : []),
       ],
     }),
-    [lines, paymentMethod, remainingAfterCredit, safeCreditToApply, selectedCardPlan],
+    [cardInstrument, lines, paymentMethod, remainingAfterCredit, safeCreditToApply, selectedCardPlan],
   );
 
   const profitabilityPreviewQuery = useQuery({
@@ -401,6 +412,7 @@ export default function PosPage() {
   function resetCheckoutState() {
     setCheckoutOpen(false);
     setPaymentMethod("CASH");
+    setCardInstrument("DEBIT");
     setUseInstallments(false);
     setSelectedInstallmentPlanId("");
     setCashReceived("");
@@ -571,6 +583,7 @@ export default function PosPage() {
           amount: remainingAmount.toFixed(2),
           card_plan_id: paymentMethod === "CARD" ? selectedCardPlan?.id : undefined,
           card_type: paymentMethod === "CARD" ? legacyCardTypeForPlan(selectedCardPlan) : undefined,
+          card_instrument: paymentMethod === "CARD" ? cardInstrument : undefined,
         });
       }
       const payload = {
@@ -1090,34 +1103,57 @@ export default function PosPage() {
               </Stack>
             </Paper>
 
-            <Typography color="text.secondary" variant="body2">
-              Puedes registrar cliente para reutilizar su saldo a favor o convertir este carrito en un apartado.
-            </Typography>
-
-            <Stack spacing={1.5}>
-              <TextField
-                label="Teléfono del cliente"
-                value={customerPhone}
-                onChange={(event) => setCustomerPhone(event.target.value)}
-                placeholder="9991234567"
-                fullWidth
-              />
-              <TextField
-                label="Nombre del cliente"
-                value={customerName}
-                onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="Opcional para venta, obligatorio para apartado"
-                fullWidth
-              />
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography color="text.secondary" variant="body2">
-                  Saldo a favor disponible
-                </Typography>
-                <Typography fontWeight={800}>
-                  {customerLookupLoading ? "Buscando..." : currency(customerCreditBalance)}
-                </Typography>
-              </Stack>
-            </Stack>
+            <Accordion
+              disableGutters
+              sx={{
+                background: "transparent",
+                boxShadow: "none",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+                borderRadius: "12px !important",
+                "&::before": { display: "none" },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    Cliente
+                  </Typography>
+                  {customerPhone.trim() ? (
+                    <Chip label={customerPhone.trim()} size="small" sx={{ fontWeight: 700 }} />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Opcional
+                    </Typography>
+                  )}
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={1.5}>
+                  <TextField
+                    label="Teléfono del cliente"
+                    value={customerPhone}
+                    onChange={(event) => setCustomerPhone(event.target.value)}
+                    placeholder="9991234567"
+                    fullWidth
+                  />
+                  <TextField
+                    label="Nombre del cliente"
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    placeholder="Opcional para venta, obligatorio para apartado"
+                    fullWidth
+                  />
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography color="text.secondary" variant="body2">
+                      Saldo a favor disponible
+                    </Typography>
+                    <Typography fontWeight={800}>
+                      {customerLookupLoading ? "Buscando..." : currency(customerCreditBalance)}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
 
             <Button
               variant="contained"
@@ -1215,30 +1251,59 @@ export default function PosPage() {
               </Stack>
             </Paper>
 
-            <TextField
-              label="Teléfono del cliente"
-              value={customerPhone}
-              onChange={(event) => setCustomerPhone(event.target.value)}
-              placeholder="Opcional"
-              fullWidth
-            />
+            <Accordion
+              disableGutters
+              sx={{
+                background: "transparent",
+                boxShadow: "none",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+                borderRadius: "12px !important",
+                "&::before": { display: "none" },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    Cliente y saldo a favor
+                  </Typography>
+                  {customerPhone.trim() ? (
+                    <Chip label={customerPhone.trim()} size="small" sx={{ fontWeight: 700 }} />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Opcional
+                    </Typography>
+                  )}
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  <TextField
+                    label="Teléfono del cliente"
+                    value={customerPhone}
+                    onChange={(event) => setCustomerPhone(event.target.value)}
+                    placeholder="Opcional"
+                    fullWidth
+                  />
 
-            <TextField
-              label="Nombre del cliente"
-              value={customerName}
-              onChange={(event) => setCustomerName(event.target.value)}
-              placeholder="Se autocompleta si ya existe"
-              fullWidth
-            />
+                  <TextField
+                    label="Nombre del cliente"
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    placeholder="Se autocompleta si ya existe"
+                    fullWidth
+                  />
 
-            <TextField
-              label="Aplicar saldo a favor"
-              value={creditToApply}
-              onChange={(event) => setCreditToApply(toMoneyInput(event.target.value))}
-              placeholder="0.00"
-              fullWidth
-              helperText={`Disponible: ${currency(customerCreditBalance)} · Restante: ${currency(remainingAfterCredit)}`}
-            />
+                  <TextField
+                    label="Aplicar saldo a favor"
+                    value={creditToApply}
+                    onChange={(event) => setCreditToApply(toMoneyInput(event.target.value))}
+                    placeholder="0.00"
+                    fullWidth
+                    helperText={`Disponible: ${currency(customerCreditBalance)} · Restante: ${currency(remainingAfterCredit)}`}
+                  />
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
 
             <TextField
               select
@@ -1291,16 +1356,43 @@ export default function PosPage() {
 
             {paymentMethod === "CARD" && remainingAfterCredit > 0 ? (
               <Stack spacing={1.5}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={useInstallments}
-                      onChange={(event) => setUseInstallments(event.target.checked)}
-                      disabled={cardPlansQuery.isLoading || installmentPlans.length === 0}
-                    />
-                  }
-                  label="Meses sin intereses"
-                />
+                <ToggleButtonGroup
+                  value={cardInstrument}
+                  exclusive
+                  onChange={(_, value: CardInstrument | null) => {
+                    if (value) {
+                      setCardInstrument(value);
+                      if (value === "DEBIT") {
+                        setUseInstallments(false);
+                        setSelectedInstallmentPlanId("");
+                      }
+                    }
+                  }}
+                  fullWidth
+                  sx={{
+                    "& .MuiToggleButtonGroup-grouped": {
+                      borderRadius: "12px !important",
+                      border: "1px solid rgba(148, 163, 184, 0.16) !important",
+                      fontWeight: 700,
+                    },
+                  }}
+                >
+                  <ToggleButton value="DEBIT">Débito</ToggleButton>
+                  <ToggleButton value="CREDIT">Crédito</ToggleButton>
+                </ToggleButtonGroup>
+
+                {cardInstrument === "CREDIT" ? (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={useInstallments}
+                        onChange={(event) => setUseInstallments(event.target.checked)}
+                        disabled={cardPlansQuery.isLoading || installmentPlans.length === 0}
+                      />
+                    }
+                    label="Meses sin intereses"
+                  />
+                ) : null}
 
                 {useInstallments ? (
                   installmentPlans.length > 0 ? (

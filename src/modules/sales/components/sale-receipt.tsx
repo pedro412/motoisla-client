@@ -26,9 +26,13 @@ function trunc(str: string, len: number) {
   return str.length > len ? str.slice(0, len) : str;
 }
 
-function methodLabel(method: string) {
+function methodLabel(method: string, cardInstrument?: string | null) {
   if (method === "CASH") return "Efectivo";
-  if (method === "CARD") return "Tarjeta";
+  if (method === "CARD") {
+    if (cardInstrument === "DEBIT") return "T. Débito";
+    if (cardInstrument === "CREDIT") return "T. Crédito";
+    return "Tarjeta";
+  }
   if (method === "CUSTOMER_CREDIT") return "Saldo favor";
   return method;
 }
@@ -87,8 +91,8 @@ export const SaleReceipt = React.forwardRef<HTMLDivElement, SaleReceiptProps>(
     for (const p of sale.payments) {
       const label =
         p.method === "CARD" && p.card_plan_label
-          ? `${methodLabel(p.method)} (${p.card_plan_label})`
-          : methodLabel(p.method);
+          ? `${methodLabel(p.method, p.card_instrument)} (${p.card_plan_label})`
+          : methodLabel(p.method, p.card_instrument);
       rows.push(`${label.padEnd(charWidth - 10)}${fmt(Number(p.amount)).padStart(10)}`);
     }
 

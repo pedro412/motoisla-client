@@ -23,6 +23,8 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +35,7 @@ import { DetailPageHeader } from "@/components/common/detail-page-header";
 import { MoneyInput } from "@/components/forms/money-input";
 import { layawayService } from "@/modules/layaway/services/layaway.service";
 import { salesService } from "@/modules/sales/services/sales.service";
-import type { PaymentMethod } from "@/lib/types/sales";
+import type { CardInstrument, PaymentMethod } from "@/lib/types/sales";
 import type { LayawayDetailResponse } from "@/lib/types/layaway";
 import { buildLayawayTicketBytes } from "@/lib/print/escpos";
 import { printViaUSB } from "@/lib/print/usb-printer";
@@ -71,6 +73,7 @@ export default function LayawayDetailPage() {
   const [extendOpen, setExtendOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [cardInstrument, setCardInstrument] = useState<CardInstrument>("DEBIT");
   const [selectedCardPlanId, setSelectedCardPlanId] = useState("");
   const [newExpiresAt, setNewExpiresAt] = useState("");
   const [extendReason, setExtendReason] = useState("");
@@ -102,7 +105,10 @@ export default function LayawayDetailPage() {
     staleTime: 60_000,
   });
 
-  const cardPlans = useMemo(() => cardPlansQuery.data?.results ?? [], [cardPlansQuery.data?.results]);
+  const cardPlans = useMemo(
+    () => (cardPlansQuery.data?.results ?? []).filter((plan) => plan.card_instrument === cardInstrument),
+    [cardPlansQuery.data?.results, cardInstrument],
+  );
   const selectedCardPlan = useMemo(
     () => cardPlans.find((plan) => plan.id === selectedCardPlanId) ?? cardPlans[0] ?? null,
     [cardPlans, selectedCardPlanId],
@@ -165,6 +171,7 @@ export default function LayawayDetailPage() {
       setPaymentOpen(false);
       setAmount("");
       setPaymentMethod("CASH");
+      setCardInstrument("DEBIT");
       setSelectedCardPlanId("");
       await layawayQuery.refetch();
     } catch (error) {
@@ -383,6 +390,28 @@ export default function LayawayDetailPage() {
 
             {paymentMethod === "CARD" ? (
               <Stack spacing={1.5}>
+                <ToggleButtonGroup
+                  value={cardInstrument}
+                  exclusive
+                  onChange={(_, value: CardInstrument | null) => {
+                    if (value) {
+                      setCardInstrument(value);
+                      setSelectedCardPlanId("");
+                    }
+                  }}
+                  fullWidth
+                  sx={{
+                    "& .MuiToggleButtonGroup-grouped": {
+                      borderRadius: "12px !important",
+                      border: "1px solid rgba(148, 163, 184, 0.16) !important",
+                      fontWeight: 700,
+                    },
+                  }}
+                >
+                  <ToggleButton value="DEBIT">Débito</ToggleButton>
+                  <ToggleButton value="CREDIT">Crédito</ToggleButton>
+                </ToggleButtonGroup>
+
                 <TextField
                   select
                   label="Plan de tarjeta"

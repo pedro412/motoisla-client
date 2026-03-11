@@ -101,6 +101,22 @@ Key points:
 - Sidebar Drawer bg = page bg (#0f172a) — unified surface
 - Topbar: transparent + `rgba(15,23,42,0.85)` + backdrop-blur 12px
 
+## Card instrument (debit/credit distinction)
+
+- POS and apartados payment flows include a debit/credit toggle (`ToggleButtonGroup`) when CARD is selected
+- `CardInstrument` type: `"DEBIT" | "CREDIT"` — added to `CardCommissionPlan`, `SalePaymentInput`, `SaleHistoryPayment`
+- Card plans are filtered by `card_instrument` — debit shows only debit plans, credit shows credit plans + MSI option
+- Backend plans: DEBIT_NORMAL (2%), CREDIT_NORMAL (2%), CREDIT_MSI_3 (5.58%). Legacy NORMAL/MSI_3 deactivated.
+- `card_instrument` included in sale/layaway payment payloads and displayed in sale detail, history, and receipt
+- Reports `payment_breakdown` includes `card_instruments` array for debit/credit breakdown
+
+## Monthly CSV export (reports)
+
+- `src/modules/reports/utils/csv-export.ts`: `downloadMonthlyReportCsv(report, monthLabel)` — generates BOM-prefixed CSV
+- CSV includes: summary (totals, profit, expenses), payment methods with debit/credit breakdown, daily sales
+- Download section in `/admin/reports` with month/year selectors, fetches report data on demand
+- Filename: `reporte-mensual-YYYY-MM.csv`
+
 ## Thermal printing (ESC/POS via WebUSB)
 
 - `src/lib/print/escpos.ts`: `buildSaleTicketBytes`, `buildLayawayTicketBytes`, `buildTestTicketBytes`
@@ -145,7 +161,7 @@ Key points:
 | `/investors` | Investors list |
 | `/investors/[id]` | Investor detail + ledger |
 | `/expenses` | Expenses list |
-| `/admin/reports` | Sales reports (admin only) |
+| `/admin/reports` | Sales reports + monthly CSV download (admin only) |
 | `/admin/users` | User management (admin only) |
 | `/settings/printer` | USB printer config |
 | `/settings/security` | PIN setup + inactivity timeout config |

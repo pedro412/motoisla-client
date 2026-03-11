@@ -1,11 +1,14 @@
 "use client";
 
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import {
   Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Grid,
+  MenuItem,
   Paper,
   Skeleton,
   Stack,
@@ -19,6 +22,7 @@ import { type ReactNode, useState } from "react";
 
 import type { SalesReportResponse } from "@/lib/types/reports";
 import { reportsService } from "@/modules/reports/services/reports.service";
+import { downloadMonthlyReportCsv } from "@/modules/reports/utils/csv-export";
 
 type PeriodPreset = "current_month" | "previous_month" | "last_3_months" | "custom";
 
@@ -331,22 +335,25 @@ function PaymentBreakdown({ report }: { report: SalesReportResponse }) {
         ))}
       </Stack>
 
-      {report.payment_breakdown.card_types.length > 0 ? (
+      {report.payment_breakdown.card_instruments?.length > 0 ? (
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          {report.payment_breakdown.card_types.map((row) => (
-            <Chip
-              key={row.card_type ?? "UNKNOWN"}
-              label={`${row.card_type ?? "Sin tipo"}: ${formatMoney(row.total_amount)}`}
-              size="small"
-              sx={{
-                fontWeight: 700,
-                borderRadius: 1.5,
-                backgroundColor: "rgba(45, 212, 191, 0.12)",
-                color: "#99f6e4",
-                border: "1px solid rgba(45, 212, 191, 0.18)",
-              }}
-            />
-          ))}
+          {report.payment_breakdown.card_instruments.map((row) => {
+            const label = row.card_instrument === "DEBIT" ? "Débito" : row.card_instrument === "CREDIT" ? "Crédito" : "Sin tipo";
+            return (
+              <Chip
+                key={row.card_instrument ?? "UNKNOWN"}
+                label={`${label}: ${formatMoney(row.total_amount)} (${row.transactions})`}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 1.5,
+                  backgroundColor: "rgba(45, 212, 191, 0.12)",
+                  color: "#99f6e4",
+                  border: "1px solid rgba(45, 212, 191, 0.18)",
+                }}
+              />
+            );
+          })}
         </Stack>
       ) : null}
     </Stack>
@@ -693,6 +700,107 @@ export default function ReportsPage() {
           </Grid>
         </>
       ) : null}
+
+      <CsvDownloadSection />
     </Stack>
+  );
+}
+
+const MONTH_OPTIONS = [
+  { value: 0, label: "Enero" },
+  { value: 1, label: "Febrero" },
+  { value: 2, label: "Marzo" },
+  { value: 3, label: "Abril" },
+  { value: 4, label: "Mayo" },
+  { value: 5, label: "Junio" },
+  { value: 6, label: "Julio" },
+  { value: 7, label: "Agosto" },
+  { value: 8, label: "Septiembre" },
+  { value: 9, label: "Octubre" },
+  { value: 10, label: "Noviembre" },
+  { value: 11, label: "Diciembre" },
+];
+
+function CsvDownloadSection() {
+  const today = new Date();
+  const prevMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1;
+  const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
+
+  const [month, setMonth] = useState(prevMonth);
+  const [year, setYear] = useState(prevYear);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentYear = today.getFullYear();
+  const yearOptions = [currentYear, currentYear - 1];
+
+  async function handleDownload() {
+    setLoading(true);
+    setError(null);
+    try {
+      const dateFrom = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      const endDate = new Date(year, month + 1, 0);
+      const dateTo = toIsoDate(endDate);
+      const report = await reportsService.getSalesReport({ date_from: dateFrom, date_to: dateTo });
+      const monthLabel = `${MONTH_OPTIONS[month].label} ${year}`;
+      downloadMonthlyReportCsv(report, monthLabel);
+    } catch {
+      setError("No fue posible generar el reporte. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Descargar reporte mensual"
+      subtitle="Genera un CSV mensual con resumen, métodos de pago y ventas por día para el contador"
+    >
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
+        <TextField
+          select
+          label="Mes"
+          value={month}
+          onChange={(event) => setMonth(Number(event.target.value))}
+          sx={{ minWidth: 150 }}
+        >
+          {MONTH_OPTIONS.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Año"
+          value={year}
+          onChange={(event) => setYear(Number(event.target.value))}
+          sx={{ minWidth: 110 }}
+        >
+          {yearOptions.map((y) => (
+            <MenuItem key={y} value={y}>
+              {y}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <Button
+          variant="contained"
+          onClick={handleDownload}
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={18} /> : <DownloadRoundedIcon />}
+          sx={{ fontWeight: 700, minWidth: 180, alignSelf: { xs: "stretch", sm: "center" } }}
+        >
+          {loading ? "Generando..." : "Descargar CSV"}
+        </Button>
+      </Stack>
+
+      {error ? (
+        <Alert severity="error" sx={{ mt: 1.5 }}>
+          {error}
+        </Alert>
+      ) : null}
+    </SectionCard>
   );
 }

@@ -18,6 +18,12 @@ export interface CardTypeBreakdown {
   transactions: number;
 }
 
+export interface CardInstrumentBreakdown {
+  card_instrument: string | null;
+  total_amount: string;
+  transactions: number;
+}
+
 export interface MetricsResponse {
   total_sales: string;
   avg_ticket: string;
@@ -52,6 +58,7 @@ export interface MetricsResponse {
   payment_breakdown: {
     by_method: PaymentMethodBreakdown[];
     card_types: CardTypeBreakdown[];
+    card_instruments: CardInstrumentBreakdown[];
   };
 }
 
