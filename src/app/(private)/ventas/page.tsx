@@ -64,7 +64,8 @@ function formatDateTime(value: string | null) {
 function formatPaymentLabel(payment: SaleHistoryPayment) {
   if (payment.method === "CASH") return `Efectivo ${formatMoney(payment.amount)}`;
   if (payment.method === "CUSTOMER_CREDIT") return `Saldo a favor ${formatMoney(payment.amount)}`;
-  const suffix = payment.card_plan_label || "Tarjeta";
+  const instrumentLabel = payment.card_instrument === "DEBIT" ? "Débito" : payment.card_instrument === "CREDIT" ? "Crédito" : "";
+  const suffix = payment.card_plan_label || instrumentLabel || "Tarjeta";
   return `${suffix} ${formatMoney(payment.amount)}`;
 }
 

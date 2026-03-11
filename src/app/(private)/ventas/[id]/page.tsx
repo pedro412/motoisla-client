@@ -60,7 +60,8 @@ function paymentLabel(payment: SalePaymentInput) {
   if (payment.method === "CUSTOMER_CREDIT") {
     return "Saldo a favor";
   }
-  return payment.card_plan_label || "Tarjeta";
+  const instrumentLabel = payment.card_instrument === "DEBIT" ? "Débito" : payment.card_instrument === "CREDIT" ? "Crédito" : "";
+  return payment.card_plan_label || instrumentLabel || "Tarjeta";
 }
 
 export default function SaleDetailPage() {

@@ -1,5 +1,6 @@
 export type PaymentMethod = "CASH" | "CARD" | "CUSTOMER_CREDIT";
 export type CardType = "NORMAL" | "MSI_3";
+export type CardInstrument = "DEBIT" | "CREDIT";
 export type ProfitabilityRateSource = "MTD_REAL" | "FALLBACK_BASE";
 
 export interface CardCommissionPlan {
@@ -8,6 +9,7 @@ export interface CardCommissionPlan {
   label: string;
   installments_months: number;
   commission_rate: string;
+  card_instrument: CardInstrument | null;
   is_active: boolean;
   sort_order: number;
 }
@@ -42,6 +44,7 @@ export interface SalePaymentInput {
   amount: string;
   card_plan_id?: string | null;
   card_type?: CardType;
+  card_instrument?: CardInstrument;
   commission_rate?: string | null;
   card_plan_code?: string;
   card_plan_label?: string;
@@ -121,6 +124,7 @@ export interface SaleHistoryPayment {
   method: PaymentMethod;
   amount: string;
   card_type: CardType | null;
+  card_instrument: CardInstrument | null;
   card_plan_label: string;
   installments_months: number;
   commission_rate: string | null;
