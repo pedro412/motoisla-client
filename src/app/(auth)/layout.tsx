@@ -37,7 +37,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
       <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}>{children}</Box>
 
-      <Box component="footer" sx={{ mt: 6 }}>
+      <Box component="footer" sx={{ mt: 6, textAlign: "center" }}>
         <Typography variant="caption" color="text.secondary">
           © {new Date().getFullYear()} MotoIsla.
         </Typography>

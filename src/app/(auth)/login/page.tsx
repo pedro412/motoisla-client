@@ -14,8 +14,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { setSession, setHydrated } = useSessionStore();
   const registerProfile = useWorkstationStore((s) => s.registerProfile);
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
