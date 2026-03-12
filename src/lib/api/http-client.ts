@@ -39,6 +39,32 @@ async function parseApiError(response: Response): Promise<ApiError> {
   });
 }
 
+/** Singleton refresh promise — prevents concurrent refresh calls from racing. */
+let refreshPromise: Promise<boolean> | null = null;
+
+async function attemptRefresh(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = fetch("/api/auth/refresh", {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+  })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login?expired=1";
+  }
+}
+
 class HttpClient {
   private async request<TResponse>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<TResponse> {
     const controller = new AbortController();
@@ -63,6 +89,22 @@ class HttpClient {
 
     try {
       let response = await execute();
+
+      // On 401, attempt a single coordinated refresh + retry
+      if (response.status === 401) {
+        const refreshed = await attemptRefresh();
+        if (refreshed) {
+          response = await execute();
+        } else {
+          redirectToLogin();
+          throw new ApiError({
+            code: "session_expired",
+            detail: "Tu sesión expiró. Inicia sesión de nuevo.",
+            fields: {},
+            status: 401,
+          });
+        }
+      }
 
       if (shouldRetry && method === "GET" && response.status >= 500) {
         response = await execute();
