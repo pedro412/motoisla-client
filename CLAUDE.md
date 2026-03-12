@@ -23,7 +23,9 @@ Browser component
 
 - `httpClient` prepends `/api/proxy` to every path automatically — pass only the Django path (e.g. `/products/`)
 - The proxy route auto-refreshes JWT on 401 via httpOnly cookies
+- `httpClient` also intercepts 401 at the browser level — calls `/api/auth/refresh` with a singleton promise (prevents race conditions from concurrent requests), retries the original request, and redirects to `/login?expired=1` if refresh fails
 - Auth cookies are set by `src/app/api/auth/` route handlers (login/logout/refresh/session)
+- JWT refresh tokens rotate on every refresh (`ROTATE_REFRESH_TOKENS=True`) — backend blacklists old tokens
 - Never call the Django API directly from browser code
 
 ## Directory structure
@@ -118,6 +120,13 @@ Key points:
 - CSV includes: summary (totals, profit, expenses), payment methods with debit/credit breakdown, daily sales
 - Download section in `/admin/reports` with month/year selectors, fetches report data on demand
 - Filename: `reporte-mensual-YYYY-MM.csv`
+
+## Security headers & CSP
+
+- `next.config.ts` adds security headers to all responses: X-Frame-Options (DENY), X-Content-Type-Options (nosniff), Referrer-Policy, Permissions-Policy, Content-Security-Policy
+- CSP allows `unsafe-inline` + `unsafe-eval` (required by Next.js + MUI/Emotion)
+- CSP `img-src` dynamically includes R2 media origin from `NEXT_PUBLIC_MEDIA_BASE_URL`
+- `connect-src 'self'` is sufficient because all API calls go through the Next.js proxy (same origin)
 
 ## Thermal printing (ESC/POS via WebUSB)
 
