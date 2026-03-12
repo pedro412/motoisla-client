@@ -2,13 +2,19 @@
 
 import { Alert, Button, CircularProgress, Link as MuiLink, Paper, Stack, TextField, Typography } from "@mui/material";
 import NextLink from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 
 import { ApiError } from "@/lib/api/errors";
 import { authService } from "@/modules/auth/services/auth.service";
 import { useSessionStore } from "@/store/session-store";
 import { useWorkstationStore } from "@/store/workstation-store";
+
+function SessionExpiredAlert() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("expired") !== "1") return null;
+  return <Alert severity="warning">Tu sesión expiró. Inicia sesión de nuevo.</Alert>;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -71,6 +77,11 @@ export default function LoginPage() {
           fullWidth
         />
 
+        {!errorMessage ? (
+          <Suspense>
+            <SessionExpiredAlert />
+          </Suspense>
+        ) : null}
         {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
         <Button type="submit" variant="contained" size="large" disabled={submitting}>
