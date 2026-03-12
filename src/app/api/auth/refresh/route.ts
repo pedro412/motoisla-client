@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { applyAccessCookie, refreshAccessToken } from "@/lib/auth/server-session";
+import { applyAccessCookie, applyRefreshCookie, refreshAccessToken } from "@/lib/auth/server-session";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -14,8 +14,8 @@ export async function POST() {
     );
   }
 
-  const access = await refreshAccessToken(refresh);
-  if (!access) {
+  const tokens = await refreshAccessToken(refresh);
+  if (!tokens) {
     return NextResponse.json(
       { code: "token_refresh_failed", detail: "No fue posible renovar la sesión.", fields: {} },
       { status: 401 },
@@ -23,6 +23,7 @@ export async function POST() {
   }
 
   const response = NextResponse.json({ ok: true });
-  applyAccessCookie(response, access);
+  applyAccessCookie(response, tokens.access);
+  applyRefreshCookie(response, tokens.refresh);
   return response;
 }

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/auth/cookies";
-import { applyAccessCookie, refreshAccessToken } from "@/lib/auth/server-session";
+import { applyAccessCookie, applyRefreshCookie, refreshAccessToken } from "@/lib/auth/server-session";
 import { API_BASE_URL, REQUEST_TIMEOUT_MS } from "@/lib/config/env";
 
 async function proxyRequest(request: Request, path: string[], accessToken?: string) {
@@ -66,11 +66,12 @@ async function handle(request: Request, context: { params: Promise<{ path: strin
   let upstream = await proxyRequest(request, path, access);
 
   if (upstream.status === 401 && refresh) {
-    const newAccess = await refreshAccessToken(refresh);
-    if (newAccess) {
-      upstream = await proxyRequest(request, path, newAccess);
+    const tokens = await refreshAccessToken(refresh);
+    if (tokens) {
+      upstream = await proxyRequest(request, path, tokens.access);
       const nextResponse = await toNextResponse(upstream);
-      applyAccessCookie(nextResponse, newAccess);
+      applyAccessCookie(nextResponse, tokens.access);
+      applyRefreshCookie(nextResponse, tokens.refresh);
       return nextResponse;
     }
   }

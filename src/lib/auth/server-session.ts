@@ -30,7 +30,9 @@ async function probeRole(accessToken: string): Promise<Role> {
   return "CASHIER";
 }
 
-export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+export async function refreshAccessToken(
+  refreshToken: string,
+): Promise<{ access: string; refresh: string } | null> {
   const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,8 +44,9 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
     return null;
   }
 
-  const data = (await response.json()) as { access?: string };
-  return data.access ?? null;
+  const data = (await response.json()) as { access?: string; refresh?: string };
+  if (!data.access) return null;
+  return { access: data.access, refresh: data.refresh ?? refreshToken };
 }
 
 export async function saveSessionCookies(params: {
@@ -69,4 +72,8 @@ export function clearSessionCookies(cookieStore: CookieStore) {
 
 export function applyAccessCookie(response: NextResponse, accessToken: string) {
   response.cookies.set(ACCESS_COOKIE, accessToken, secureCookie);
+}
+
+export function applyRefreshCookie(response: NextResponse, refreshToken: string) {
+  response.cookies.set(REFRESH_COOKIE, refreshToken, secureCookie);
 }
